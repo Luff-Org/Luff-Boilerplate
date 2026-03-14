@@ -83,6 +83,9 @@ async function main() {
     console.log(
       "  docker compose -f docker/docker-compose.yml up auth-db posts-db -d"
     );
+    console.log(
+      "  set up .env files from .env.example files, can also use script > npm run setup"
+    );
     console.log("  npm run dev");
     console.log("");
   } catch (error) {
