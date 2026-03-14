@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: ghcr.io/luff-org/auth-service:c48fb91d848c7b0559dd5ce171c3b9eefdfafd82
+          image: ghcr.io/luff-org/auth-service:0012d18a76006342f663c5b31780585d9aa57fb7
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4001
