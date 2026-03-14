@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: docker-frontend:latest
+          image: ghcr.io/luff-org/frontend:f1b49354bafc2d65e72770d086f7400f4b7ad7c6
           imagePullPolicy: Never # For local minikube testing
           ports:
             - containerPort: 3000

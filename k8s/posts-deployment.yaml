@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: posts-service
-          image: docker-posts-service:latest
+          image: ghcr.io/luff-org/posts-service:f1b49354bafc2d65e72770d086f7400f4b7ad7c6
           imagePullPolicy: Never
           ports:
             - containerPort: 4002
