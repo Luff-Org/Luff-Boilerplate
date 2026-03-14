@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/luff-org/frontend:295137bebed0ea16053dd3491e859581a1c23ff5
+          image: ghcr.io/luff-org/frontend:71529bf8231b5f70cd64f3e482c7468cf5274554
           imagePullPolicy: IfNotPresent # For local minikube testing
           ports:
             - containerPort: 3000
