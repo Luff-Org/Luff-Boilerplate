@@ -17,7 +17,7 @@ spec:
       containers:
         - name: posts-service
           image: ghcr.io/luff-org/posts-service:c48fb91d848c7b0559dd5ce171c3b9eefdfafd82
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 4002
           env:
