@@ -13,12 +13,13 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
-app.use(rateLimiter);
-app.use(requestLogger);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'api-gateway' });
 });
+
+app.use(rateLimiter);
+app.use(requestLogger);
 
 // Proxy /auth/* → auth service
 app.use(
