@@ -1,10 +1,35 @@
-# Microservices Boilerplate
+# 💨 Luff Microservices Boilerplate
 
-A **production-grade microservices monorepo** built with Turborepo, TypeScript, Next.js, Express, Prisma, and PostgreSQL.
+[![NPM Version](https://img.shields.io/npm/v/create-luff-app?color=blue&style=flat-square)](https://www.npmjs.com/package/create-luff-app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 
-## Architecture
+A **production-grade microservices monorepo** designed for speed, scalability, and developer experience. Built with Turborepo, Next.js, Express, Prisma, and PostgreSQL.
 
+---
+
+## 🚀 Quick Start with CLI
+
+The fastest way to scaffold a new project using this boilerplate is with our official CLI:
+
+```bash
+npx create-luff-app <your-app-name>
 ```
+
+> [!TIP]
+> This command will clone the repository, install dependencies, and set up your project structure automatically.
+
+---
+
+## 📝 Operational Notes
+
+For detailed troubleshooting on database connections, Kubernetes local setup, and Docker build fixes, see [NOTES.md](./NOTES.md).
+
+---
+
+## 🏗️ Architecture
+
+```text
                     ┌─────────────┐
                     │  API Gateway│  :4000
                     │  (Express)  │
@@ -30,127 +55,135 @@ A **production-grade microservices monorepo** built with Turborepo, TypeScript, 
             └─────────────────────────────┘
 ```
 
-## Tech Stack
+---
 
-| Layer        | Technology                                  |
-| ------------ | ------------------------------------------- |
-| Frontend     | Next.js 14, React, TailwindCSS, React Query |
-| API Client   | Axios                                       |
-| Backend      | Node.js, Express, TypeScript                |
-| Database     | PostgreSQL, Prisma ORM                      |
-| Auth         | Google OAuth (PostMessage flow), JWT        |
-| Gateway      | http-proxy-middleware, rate-limit           |
-| Monorepo     | Turborepo, npm workspaces                   |
-| Logging      | Pino                                        |
-| Config       | Zod validation, dotenv                      |
-| Docker       | Multi-stage builds                          |
-| Orchestrator | Kubernetes                                  |
-| Code Quality | ESLint, Prettier, Husky, Commitlint         |
+## 🛠️ Tech Stack
 
-## Quick Start
+| Layer        | Technology                                        |
+| :----------- | :------------------------------------------------ |
+| **Frontend** | Next.js 14 (App Router), TailwindCSS, React Query |
+| **Backend**  | Node.js, Express, TypeScript                      |
+| **Database** | PostgreSQL, Prisma ORM                            |
+| **Auth**     | Google OAuth (PostMessage flow), JWT              |
+| **Monorepo** | Turborepo, npm workspaces                         |
+| **Infra**    | Docker, Kubernetes (ArgoCD ready)                 |
+| **Quality**  | ESLint, Prettier, Husky, Commitlint               |
+
+---
+
+## ⚡ Local Development Setup
+
+Follow these steps to get your environment running from scratch.
+
+### 1. Prerequisites
+
+Ensure you have the following installed:
+
+- **Node.js**: `v20.x` or higher
+- **Docker**: For running databases locally
+
+### 2. Installation
+
+If you didn't use the CLI, clone and install manually:
 
 ```bash
-# 1. Clone and install
-git clone <repo-url>
+git clone https://github.com/Luff-Org/Luff-Boilerplate.git
 cd Luff-Boilerplate
 npm install
+```
 
-# 2. Copy environment files
-bash scripts/setup.sh
+### 3. Environment & Databases
 
-# 3. Start databases (requires Docker)
+We provide a setup script to automate `.env` creation:
+
+```bash
+# Automatically creates .env files from .env.example
+npm run setup
+
+# Spin up PostgreSQL instances via Docker
 docker compose -f docker/docker-compose.yml up auth-db posts-db -d
+```
 
-# 4. Generate Prisma clients and push schemas
+### 4. Database Initialization
+
+Generate Prisma clients and push schemas to your local databases:
+
+```bash
+# Auth service
 cd backend/auth && npm run db:push && npm run db:generate && cd ../..
-cd backend/posts && npm run db:push && npm run db:generate && cd ../..
 
-# 5. Start all services
+# Posts service
+cd backend/posts && npm run db:push && npm run db:generate && cd ../..
+```
+
+### 5. Start Developing
+
+```bash
 npm run dev
 ```
 
-This starts:
+Your services will be available at:
 
-| Service       | URL                   |
-| ------------- | --------------------- |
-| API Gateway   | http://localhost:4000 |
-| Auth Service  | http://localhost:4001 |
-| Posts Service | http://localhost:4002 |
-| Web Frontend  | http://localhost:3000 |
+- **Web Interface**: [http://localhost:3000](http://localhost:3000)
+- **API Gateway**: [http://localhost:4000](http://localhost:4000)
+- **Auth Service**: [http://localhost:4001](http://localhost:4001)
+- **Posts Service**: [http://localhost:4002](http://localhost:4002)
 
-## Project Structure
+---
+
+## 📂 Project Structure
 
 ```text
-├── frontend/              # Unified Next.js application (Auth + Posts)
+├── frontend/              # Unified Next.js application
 ├── backend/
-│   ├── auth/              # Auth microservice (Google OAuth postmessage, JWT)
+│   ├── auth/              # Auth microservice (Google OAuth + JWT)
 │   ├── posts/             # Posts microservice (CRUD)
-│   └── api-gateway/       # API Gateway (Express proxy, rate-limit)
-├── shared/
-│   ├── types/             # Shared TypeScript types
-│   ├── logger/            # Shared Pino logger setup
-│   ├── config/            # Zod env validation schema
-│   └── eslint-config/     # Default ESLint rules
-├── docker/                # Docker Compose Definitions
-├── k8s/                   # Kubernetes Manifests
-└── scripts/               # CI/CD and Local Setup Scripts
+│   └── api-gateway/       # Express Proxy & Rate Limiting
+├── shared/                # Shared internal packages (Types, Logger, Config)
+├── docker/                # Docker Compose configurations
+├── k8s/                   # Kubernetes manifests
+└── scripts/               # Automation & Setup scripts
 ```
 
-## API Endpoints
+---
 
-### Auth Service (Proxied via Gateway `:4000`)
+## 🔐 Google OAuth Configuration
 
-| Method | Endpoint     | Auth | Description                    |
-| ------ | ------------ | ---- | ------------------------------ |
-| POST   | /auth/login  | No   | Google OAuth postmessage login |
-| GET    | /auth/me     | Yes  | Get current user profile       |
-| POST   | /auth/logout | Yes  | Logout (clear session)         |
+To enable authentication:
 
-### Posts Service (Proxied via Gateway `:4000`)
+1. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Set authorized origin to `http://localhost:3000`.
+3. Update `GOOGLE_CLIENT_ID` in `backend/auth/.env` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env`.
 
-| Method | Endpoint   | Auth | Description    |
-| ------ | ---------- | ---- | -------------- |
-| GET    | /posts     | No   | List all posts |
-| GET    | /posts/:id | No   | Get post by ID |
-| POST   | /posts     | Yes  | Create a post  |
-| DELETE | /posts/:id | Yes  | Delete a post  |
+---
 
-## Docker
+## 🐳 Deployment
 
-### Run with Docker Compose
+### Docker Compose
 
 ```bash
 docker compose -f docker/docker-compose.yml up --build
 ```
 
-### Build individual images
+### Kubernetes
 
 ```bash
-docker build -f backend/auth/Dockerfile -t auth-service .
-docker build -f backend/posts/Dockerfile -t posts-service .
-docker build -f backend/api-gateway/Dockerfile -t api-gateway .
-docker build -f frontend/Dockerfile -t frontend-app .
-```
-
-## Kubernetes
-
-```bash
-# Apply all manifests
 kubectl apply -f k8s/
-
-# Note: You must manually deploy secrets in your cluster:
-# - auth-secrets (database-url, jwt-secret, google auth credentials)
-# - posts-secrets (database-url, jwt-secret)
 ```
 
-## Scripts
+---
 
-```bash
-npm run dev       # Start all services (Turborepo)
-npm run build     # Build all TypeScript packages & apps
-npm run lint      # Lint across the monorepo
-```
+## 📜 Scripts
 
-## License
+| Command         | Description                             |
+| :-------------- | :-------------------------------------- |
+| `npm run dev`   | Starts all services in development mode |
+| `npm run build` | Builds all apps and packages            |
+| `npm run setup` | Initializes environment files           |
+| `npm run lint`  | Runs linting across the monorepo        |
 
-MIT
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
