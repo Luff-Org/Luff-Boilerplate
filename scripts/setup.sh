@@ -18,7 +18,7 @@ for env_example in $(find . -name '.env.example' -not -path './node_modules/*');
 done
 
 # Setup Husky
-echo "🐶 Setting up Husky..."
-npx husky init 2>/dev/null || true
+echo "🐶 Setting up Git Hooks..."
+npx husky 2>/dev/null || true
 
 echo "✅ Setup complete! Run 'npm run dev' to start all services."
