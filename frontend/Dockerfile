@@ -4,8 +4,14 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/
+COPY backend/auth/package.json ./backend/auth/
+COPY backend/posts/package.json ./backend/posts/
+COPY backend/api-gateway/package.json ./backend/api-gateway/
+COPY shared/config/package.json ./shared/config/
+COPY shared/logger/package.json ./shared/logger/
+COPY shared/types/package.json ./shared/types/
 RUN npm pkg delete scripts.prepare
-RUN npm install --workspace=@app/frontend
+RUN npm ci --workspace=@app/frontend
 
 FROM base AS builder
 WORKDIR /app
