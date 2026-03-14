@@ -86,3 +86,28 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/auth_db"
 | **Check K8s Pods**      | `kubectl get pods`                                                                      |
 | **K8s Log Tail**        | `kubectl logs <pod-name> -f`                                                            |
 | **K8s Secret Update**   | `kubectl create secret generic auth-secrets --from-literal=... --dry-run=client -o yaml | kubectl apply -f -` |
+
+---
+
+## 🚢 Continuous Delivery with ArgoCD
+
+We use a GitOps approach for deployments.
+
+### 1. How it works
+
+1.  **GitHub Action (CD)**: Builds Docker images with the **Git SHA** tag and pushes them to GitHub Container Registry (GHCR).
+2.  **Manifest Update**: The CD workflow automatically updates the image tags in `k8s/*.yaml` in your repository.
+3.  **ArgoCD Sync**: ArgoCD detects the change in the Git repository and synchronizes the cluster to match the new image version.
+
+### 2. Initial Setup
+
+1.  Install ArgoCD in your cluster:
+    ```bash
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    ```
+2.  Update the `repoURL` in `argocd/application.yaml` to point to your repository.
+3.  Apply the ArgoCD Application:
+    ```bash
+    kubectl apply -f argocd/application.yaml
+    ```
