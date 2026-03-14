@@ -11,10 +11,11 @@ COPY shared/config/package.json ./shared/config/
 COPY shared/logger/package.json ./shared/logger/
 COPY shared/types/package.json ./shared/types/
 RUN npm pkg delete scripts.prepare
-RUN npm ci --workspace=@app/frontend
+RUN npm ci
 
 FROM base AS builder
 WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
@@ -22,8 +23,10 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY frontend/ ./frontend/
+COPY backend/ ./backend/
+COPY shared/ ./shared/
 COPY tsconfig.base.json ./
-RUN npm run build --workspace=@app/frontend
+RUN npm run build -w @app/frontend
 
 FROM base AS runner
 WORKDIR /app

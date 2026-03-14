@@ -1,6 +1,7 @@
 {
   "name": "microservices-boilerplate",
   "version": "1.0.0",
+  "packageManager": "npm@10.8.2",
   "private": true,
   "workspaces": [
     "frontend",
@@ -40,6 +41,5 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
-  },
-  "packageManager": "npm@10.8.2"
+  }
 }
