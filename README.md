@@ -21,6 +21,12 @@ npx create-luff-app <your-app-name>
 
 ---
 
+## 📝 Operational Notes
+
+For detailed troubleshooting on database connections, Kubernetes local setup, and Docker build fixes, see [NOTES.md](./NOTES.md).
+
+---
+
 ## 🏗️ Architecture
 
 ```text
