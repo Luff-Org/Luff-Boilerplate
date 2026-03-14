@@ -28,7 +28,7 @@ docker -v  # Should print Docker version 24.x or higher
 ## Step 1 — Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Luff-Org/Luff-Boilerplate.git
 cd Luff-Boilerplate
 ```
 
@@ -40,13 +40,13 @@ cd Luff-Boilerplate
 npm install
 ```
 
-This installs dependencies for **all** workspaces (frontend apps, backend services, shared packages) in one command via npm workspaces + Turborepo.
+This installs dependencies for **all** workspaces (frontend, backend services, shared packages) in one command via npm workspaces + Turborepo.
 
 ---
 
 ## Step 3 — Set Up Environment Variables
 
-Copy all `.env.example` files to `.env`:
+Copy `.env.example` files to their respective `.env` files:
 
 ```bash
 # Backend
@@ -55,11 +55,10 @@ cp backend/posts/.env.example backend/posts/.env
 cp backend/api-gateway/.env.example backend/api-gateway/.env
 
 # Frontend
-cp frontend/apps/auth/.env.example frontend/apps/auth/.env
-cp frontend/apps/posts/.env.example frontend/apps/posts/.env
+cp frontend/.env.example frontend/.env
 ```
 
-**Or use the setup script** (does the same thing automatically):
+**Or use the setup script** (does this automatically):
 
 ```bash
 bash scripts/setup.sh
@@ -69,7 +68,7 @@ bash scripts/setup.sh
 
 ## Step 4 — Start the Databases
 
-Both backend services need PostgreSQL. Start them with Docker:
+Both backend services need their own PostgreSQL instance. Start them via Docker:
 
 ```bash
 docker compose -f docker/docker-compose.yml up auth-db posts-db -d
@@ -82,53 +81,59 @@ This starts:
 | Auth DB  | 5433  | `postgres:postgres` / `auth_db`  |
 | Posts DB | 5434  | `postgres:postgres` / `posts_db` |
 
-Verify databases are running:
+Verify databases are healthy:
 
 ```bash
 docker ps
 ```
 
-You should see two `postgres:16-alpine` containers with status `Up` and `(healthy)`.
+You should see two `postgres:16-alpine` containers.
 
 ---
 
 ## Step 5 — Set Up Prisma (Database Schemas)
 
-Generate the Prisma client and push schemas to the databases:
+Generate the custom isolated Prisma clients and push schemas to the databases:
 
 ```bash
 # Auth service
-npx --workspace=@backend/auth prisma generate
-npx --workspace=@backend/auth prisma db push
+cd backend/auth
+npm run db:push
+npm run db:generate
+cd ../..
 
 # Posts service
-npx --workspace=@backend/posts prisma generate
-npx --workspace=@backend/posts prisma db push
+cd backend/posts
+npm run db:push
+npm run db:generate
+cd ../..
 ```
+
+*(Note: These services use isolated local Prisma generated folders to avoid monorepo type collisions).*
 
 ---
 
 ## Step 6 — Configure Google OAuth
 
-> **Skip this step** if you just want to test the Posts service without authentication.
+> **Skip this step** if you only want to test the public Posts list without login via `localhost:4000/posts`.
 
 1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
 2. Click **Create Credentials → OAuth 2.0 Client ID**
 3. Set Application Type to **Web application**
-4. Add `http://localhost:3001` under **Authorized JavaScript origins**
-5. Add `http://localhost:3001` under **Authorized redirect URIs**
+4. Add `http://localhost:3000` and `http://localhost` under **Authorized JavaScript origins**
+5. Add `http://localhost:3000` under **Authorized redirect URIs** (though we use `postmessage` implicitly, some flows still require this allowed origin).
 6. Copy the **Client ID** and **Client Secret**
 
-Update these files with your credentials:
+Update these files:
 
 **`backend/auth/.env`:**
-```
+```text
 GOOGLE_CLIENT_ID=your-actual-google-client-id
 GOOGLE_CLIENT_SECRET=your-actual-google-client-secret
 ```
 
-**`frontend/apps/auth/.env`:**
-```
+**`frontend/.env`:**
+```text
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-actual-google-client-id
 ```
 
@@ -140,7 +145,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-actual-google-client-id
 npm run dev
 ```
 
-Turborepo starts everything in parallel. Wait until you see all services logging their startup messages.
+Turborepo will start everything in parallel.
 
 ---
 
@@ -148,7 +153,7 @@ Turborepo starts everything in parallel. Wait until you see all services logging
 
 ### Health Checks
 
-Open these URLs in your browser or use `curl`:
+Open these URLs in your browser or with `curl`:
 
 ```bash
 curl http://localhost:4000/health   # → {"status":"ok","service":"api-gateway"}
@@ -156,25 +161,13 @@ curl http://localhost:4001/health   # → {"status":"ok","service":"auth"}
 curl http://localhost:4002/health   # → {"status":"ok","service":"posts"}
 ```
 
-### Frontend Apps
+### The Application
 
 | App            | URL                      |
 | -------------- | ------------------------ |
-| Auth (Login)   | http://localhost:3001     |
-| Posts           | http://localhost:3002     |
+| Unified Web UI | http://localhost:3000    |
 
-### Test the Posts API
-
-```bash
-# Get all posts (no auth required)
-curl http://localhost:4000/posts
-
-# Create a post (requires JWT token)
-curl -X POST http://localhost:4000/posts \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -d '{"title": "Hello World", "content": "My first post"}'
-```
+Navigate to the UI to test the layout. Click **"Login"** to start the Google `@react-oauth/google` popup flow. Once logged in, head over to **"Posts"** to create a private post using your JWT Session!
 
 ---
 
@@ -185,8 +178,7 @@ curl -X POST http://localhost:4000/posts \
 | API Gateway     | 4000 | Routes requests to services    |
 | Auth Service    | 4001 | Google OAuth + JWT             |
 | Posts Service   | 4002 | Posts CRUD                     |
-| Auth Frontend   | 3001 | Next.js login UI               |
-| Posts Frontend  | 3002 | Next.js posts UI               |
+| Next.js App     | 3000 | Unified Web Interface          |
 | Auth DB         | 5433 | PostgreSQL for auth            |
 | Posts DB        | 5434 | PostgreSQL for posts           |
 
@@ -194,23 +186,17 @@ curl -X POST http://localhost:4000/posts \
 
 ## Common Issues
 
-### `Cannot find module '@prisma/client'`
-Run Prisma generate:
+### `Cannot find module '../../prisma/generated/client'`
+If your app complains about a missing Prisma generated client, or `findUnique` is undefined:
 ```bash
-npx --workspace=@backend/auth prisma generate
-npx --workspace=@backend/posts prisma generate
+cd backend/<problematic-service>
+npm run db:generate
 ```
 
 ### `ECONNREFUSED` on database connection
 Make sure Docker databases are running:
 ```bash
 docker compose -f docker/docker-compose.yml up auth-db posts-db -d
-```
-
-### Port already in use
-Check if another process is using the port:
-```bash
-lsof -i :4000   # Replace with the conflicting port
 ```
 
 ### `Invalid environment variables`
@@ -228,7 +214,7 @@ Make sure you copied `.env.example` to `.env` for every service (Step 3).
 docker compose -f docker/docker-compose.yml down
 ```
 
-To also delete database data:
+To also delete database data (wipe clean):
 ```bash
 docker compose -f docker/docker-compose.yml down -v
 ```

@@ -23,36 +23,36 @@ A **production-grade microservices monorepo** built with Turborepo, TypeScript, 
         │ (Postgres)│           │ (Postgres) │
         └───────────┘           └────────────┘
 
-           ┌──────────────┐    ┌──────────────┐
-           │  Auth App    │    │  Posts App   │
-           │  (Next.js)   │    │  (Next.js)   │
-           │    :3001     │    │    :3002     │
-           └──────────────┘    └──────────────┘
+            ┌─────────────────────────────┐
+            │        Frontend App         │
+            │          (Next.js)          │
+            │            :3000            │
+            └─────────────────────────────┘
 ```
 
 ## Tech Stack
 
-| Layer        | Technology                         |
-| ------------ | ---------------------------------- |
-| Frontend     | Next.js 14, React, TailwindCSS     |
-| API Client   | Axios, React Query                 |
-| Backend      | Node.js, Express, TypeScript       |
-| Database     | PostgreSQL, Prisma ORM             |
-| Auth         | Google OAuth, JWT                  |
-| Gateway      | http-proxy-middleware, rate-limit  |
-| Monorepo     | Turborepo, npm workspaces          |
-| Logging      | Pino                               |
-| Config       | Zod validation, dotenv             |
-| Docker       | Multi-stage builds                 |
-| Orchestrator | Kubernetes                         |
-| Code Quality | ESLint, Prettier, Husky, Commitlint|
+| Layer        | Technology                                   |
+| ------------ | -------------------------------------------- |
+| Frontend     | Next.js 14, React, TailwindCSS, React Query  |
+| API Client   | Axios                                        |
+| Backend      | Node.js, Express, TypeScript                 |
+| Database     | PostgreSQL, Prisma ORM                       |
+| Auth         | Google OAuth (PostMessage flow), JWT         |
+| Gateway      | http-proxy-middleware, rate-limit            |
+| Monorepo     | Turborepo, npm workspaces                    |
+| Logging      | Pino                                         |
+| Config       | Zod validation, dotenv                       |
+| Docker       | Multi-stage builds                           |
+| Orchestrator | Kubernetes                                   |
+| Code Quality | ESLint, Prettier, Husky, Commitlint          |
 
 ## Quick Start
 
 ```bash
 # 1. Clone and install
 git clone <repo-url>
-cd microservices-boilerplate
+cd Luff-Boilerplate
 npm install
 
 # 2. Copy environment files
@@ -61,9 +61,9 @@ bash scripts/setup.sh
 # 3. Start databases (requires Docker)
 docker compose -f docker/docker-compose.yml up auth-db posts-db -d
 
-# 4. Push database schemas
-npm run db:push --workspace=@backend/auth
-npm run db:push --workspace=@backend/posts
+# 4. Generate Prisma clients and push schemas
+cd backend/auth && npm run db:push && npm run db:generate && cd ../..
+cd backend/posts && npm run db:push && npm run db:generate && cd ../..
 
 # 5. Start all services
 npm run dev
@@ -76,46 +76,37 @@ This starts:
 | API Gateway    | http://localhost:4000   |
 | Auth Service   | http://localhost:4001   |
 | Posts Service  | http://localhost:4002   |
-| Auth Frontend  | http://localhost:3001   |
-| Posts Frontend | http://localhost:3002   |
+| Web Frontend   | http://localhost:3000   |
 
 ## Project Structure
 
-```
-├── frontend/
-│   ├── apps/
-│   │   ├── auth/          # Next.js auth app (login)
-│   │   └── posts/         # Next.js posts app
-│   └── packages/
-│       ├── ui/            # Shared React components
-│       ├── hooks/         # Shared React Query hooks
-│       ├── api-client/    # Axios API client
-│       └── types/         # Frontend TypeScript types
+```text
+├── frontend/              # Unified Next.js application (Auth + Posts)
 ├── backend/
-│   ├── auth/              # Auth microservice (Google OAuth, JWT)
+│   ├── auth/              # Auth microservice (Google OAuth postmessage, JWT)
 │   ├── posts/             # Posts microservice (CRUD)
-│   └── api-gateway/       # API Gateway (proxy, rate-limit)
+│   └── api-gateway/       # API Gateway (Express proxy, rate-limit)
 ├── shared/
-│   ├── types/             # Shared backend TypeScript types
-│   ├── logger/            # Pino logger
-│   ├── config/            # Zod env validation
-│   └── eslint-config/     # Shared ESLint config
-├── docker/                # Docker Compose
-├── k8s/                   # Kubernetes manifests
-└── scripts/               # Shell scripts
+│   ├── types/             # Shared TypeScript types
+│   ├── logger/            # Shared Pino logger setup
+│   ├── config/            # Zod env validation schema
+│   └── eslint-config/     # Default ESLint rules
+├── docker/                # Docker Compose Definitions
+├── k8s/                   # Kubernetes Manifests
+└── scripts/               # CI/CD and Local Setup Scripts
 ```
 
 ## API Endpoints
 
-### Auth Service
+### Auth Service (Proxied via Gateway `:4000`)
 
-| Method | Endpoint       | Auth | Description          |
-| ------ | -------------- | ---- | -------------------- |
-| POST   | /auth/google   | No   | Google OAuth login   |
-| GET    | /auth/me       | Yes  | Get current user     |
-| POST   | /auth/logout   | Yes  | Logout               |
+| Method | Endpoint       | Auth | Description                   |
+| ------ | -------------- | ---- | ----------------------------- |
+| POST   | /auth/login    | No   | Google OAuth postmessage login|
+| GET    | /auth/me       | Yes  | Get current user profile      |
+| POST   | /auth/logout   | Yes  | Logout (clear session)        |
 
-### Posts Service
+### Posts Service (Proxied via Gateway `:4000`)
 
 | Method | Endpoint       | Auth | Description          |
 | ------ | -------------- | ---- | -------------------- |
@@ -138,61 +129,26 @@ docker compose -f docker/docker-compose.yml up --build
 docker build -f backend/auth/Dockerfile -t auth-service .
 docker build -f backend/posts/Dockerfile -t posts-service .
 docker build -f backend/api-gateway/Dockerfile -t api-gateway .
+docker build -f frontend/Dockerfile -t frontend-app .
 ```
 
 ## Kubernetes
 
 ```bash
-# Apply manifests
+# Apply all manifests
 kubectl apply -f k8s/
 
-# Create secrets first
-kubectl create secret generic auth-secrets \
-  --from-literal=database-url='...' \
-  --from-literal=jwt-secret='...' \
-  --from-literal=google-client-id='...' \
-  --from-literal=google-client-secret='...'
-
-kubectl create secret generic posts-secrets \
-  --from-literal=database-url='...' \
-  --from-literal=jwt-secret='...'
+# Note: You must manually deploy secrets in your cluster:
+# - auth-secrets (database-url, jwt-secret, google auth credentials)
+# - posts-secrets (database-url, jwt-secret)
 ```
-
-## Environment Variables
-
-### Auth Service
-
-| Variable              | Description              |
-| --------------------- | ------------------------ |
-| `PORT`                | Service port (4001)      |
-| `DATABASE_URL`        | PostgreSQL connection    |
-| `JWT_SECRET`          | JWT signing secret       |
-| `GOOGLE_CLIENT_ID`    | Google OAuth client ID   |
-| `GOOGLE_CLIENT_SECRET`| Google OAuth secret      |
-
-### Posts Service
-
-| Variable       | Description              |
-| -------------- | ------------------------ |
-| `PORT`         | Service port (4002)      |
-| `DATABASE_URL` | PostgreSQL connection    |
-| `JWT_SECRET`   | JWT signing secret       |
-
-### API Gateway
-
-| Variable            | Description              |
-| ------------------- | ------------------------ |
-| `PORT`              | Gateway port (4000)      |
-| `AUTH_SERVICE_URL`  | Auth service URL         |
-| `POSTS_SERVICE_URL` | Posts service URL        |
 
 ## Scripts
 
 ```bash
 npm run dev       # Start all services (Turborepo)
-npm run build     # Build all services
-npm run lint      # Lint all services
-npm run format    # Format all files with Prettier
+npm run build     # Build all TypeScript packages & apps
+npm run lint      # Lint across the monorepo
 ```
 
 ## License
