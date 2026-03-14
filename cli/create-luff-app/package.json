@@ -1,6 +1,6 @@
 {
   "name": "create-luff-app",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CLI to scaffold the Luff Microservices Boilerplate",
   "bin": {
     "create-luff-app": "bin/cli.js"
