@@ -1,24 +1,33 @@
 FROM node:20-alpine AS base
 
-FROM base AS builder
-RUN apk add --no-cache libc6-compat
+FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY frontend/package.json ./frontend/
+RUN npm pkg delete scripts.prepare
+RUN npm install --workspace=@app/frontend
 
-COPY . .
-RUN npm run build
+FROM base AS builder
+WORKDIR /app
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY frontend/ ./frontend/
+COPY tsconfig.base.json ./
+RUN npm run build --workspace=@app/frontend
 
 FROM base AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
+COPY --from=builder /app/node_modules ./node_modules
 
 USER nextjs
 EXPOSE 3000

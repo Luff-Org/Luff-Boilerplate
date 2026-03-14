@@ -26,7 +26,7 @@ app.use(
   createProxyMiddleware({
     target: env.AUTH_SERVICE_URL,
     changeOrigin: true,
-    pathRewrite: (_path, req) => req.originalUrl,
+    pathRewrite: (_path, req: any) => req.originalUrl,
     on: {
       error: (err) => log.error({ err }, 'Auth proxy error'),
     },
@@ -39,7 +39,7 @@ app.use(
   createProxyMiddleware({
     target: env.POSTS_SERVICE_URL,
     changeOrigin: true,
-    pathRewrite: (_path, req) => req.originalUrl,
+    pathRewrite: (_path, req: any) => req.originalUrl,
     on: {
       error: (err) => log.error({ err }, 'Posts proxy error'),
     },

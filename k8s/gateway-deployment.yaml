@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: api-gateway:latest
+          image: docker-gateway:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 4000
           env:

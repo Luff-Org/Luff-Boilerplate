@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: auth-service:latest
+          image: docker-auth-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 4001
           env:

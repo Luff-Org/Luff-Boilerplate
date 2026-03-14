@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: microservices-frontend:latest
+          image: docker-frontend:latest
           imagePullPolicy: Never # For local minikube testing
           ports:
             - containerPort: 3000
