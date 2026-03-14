@@ -6,8 +6,11 @@ import { FcGoogle } from 'react-icons/fc';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginWithGoogle, getMe, logoutUser } from '@/lib/api';
 
+import { useRouter } from 'next/navigation';
+
 export default function LoginPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const { data: user, isLoading } = useQuery({ queryKey: ['me'], queryFn: getMe, retry: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +22,9 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
         await loginWithGoogle(codeResponse.code);
-        queryClient.invalidateQueries({ queryKey: ['me'] });
+        await queryClient.invalidateQueries({ queryKey: ['me'] });
+        router.push('/dashboard');
+        router.refresh();
       } catch (err: any) {
         setError(err.response?.data?.message || 'Login failed. Please try again.');
         setLoading(false);
@@ -30,11 +35,6 @@ export default function LoginPage() {
     },
   });
 
-  async function handleLogout() {
-    await logoutUser();
-    queryClient.invalidateQueries({ queryKey: ['me'] });
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
@@ -44,26 +44,8 @@ export default function LoginPage() {
   }
 
   if (user) {
-    return (
-      <div className="flex items-center justify-center min-h-[80vh] p-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 w-full max-w-md">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Welcome back</h1>
-          <div className="flex items-center gap-4 mb-6">
-            {user.picture && <img src={user.picture} alt={user.name} className="w-12 h-12 rounded-full" />}
-            <div>
-              <p className="font-medium text-gray-900">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    );
+    router.push('/dashboard');
+    return null;
   }
 
   return (
