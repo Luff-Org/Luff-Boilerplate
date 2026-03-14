@@ -14,7 +14,7 @@ if (process.argv.length < 3) {
 const projectName = process.argv[2];
 const currentPath = process.cwd();
 const projectPath = path.join(currentPath, projectName);
-const GIT_REPO = '/Users/harshtanwar/Documents/Luff-Org/Luff-Boilerplate';
+const GIT_REPO = 'https://github.com/Luff-Org/Luff-Boilerplate.git';
 
 if (fs.existsSync(projectPath)) {
   console.log('\x1b[31m%s\x1b[0m', `❌ Error: The folder '${projectName}' already exists in the current directory.`);
@@ -49,7 +49,7 @@ async function main() {
 
     console.log('\x1b[36m%s\x1b[0m', '💾 Committing initial project state...');
     execSync('git add .', { stdio: 'inherit' });
-    execSync('git commit -m "chore: initial commit from create-luff-app"', { stdio: 'inherit' });
+    execSync('git commit -m "chore: initial commit from create-luff-app" --no-verify', { stdio: 'inherit' });
 
     console.log('\x1b[32m%s\x1b[0m', '✅ Installation Complete!');
     console.log('');
