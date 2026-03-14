@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: ghcr.io/luff-org/api-gateway:latest
+          image: ghcr.io/luff-org/api-gateway:c48fb91d848c7b0559dd5ce171c3b9eefdfafd82
           imagePullPolicy: Always
           ports:
             - containerPort: 4000
