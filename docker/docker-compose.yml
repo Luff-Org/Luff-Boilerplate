@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    ports:
+      - '5433:5432'
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  posts-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: posts_db
+    ports:
+      - '5434:5432'
+    volumes:
+      - posts-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: backend/auth/Dockerfile
+    ports:
+      - '4001:4001'
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://postgres:postgres@auth-db:5432/auth_db
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      NODE_ENV: development
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+  posts-service:
+    build:
+      context: ..
+      dockerfile: backend/posts/Dockerfile
+    ports:
+      - '4002:4002'
+    environment:
+      PORT: 4002
+      DATABASE_URL: postgresql://postgres:postgres@posts-db:5432/posts_db
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      NODE_ENV: development
+    depends_on:
+      posts-db:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: backend/api-gateway/Dockerfile
+    ports:
+      - '4000:4000'
+    environment:
+      PORT: 4000
+      AUTH_SERVICE_URL: http://auth-service:4001
+      POSTS_SERVICE_URL: http://posts-service:4002
+      NODE_ENV: development
+    depends_on:
+      - auth-service
+      - posts-service
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      PORT: 3000
+    depends_on:
+      - gateway
+
+volumes:
+  auth-db-data:
+  posts-db-data:
