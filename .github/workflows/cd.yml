@@ -38,6 +38,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set lower case owner name
+        id: owner
+        run: echo "owner=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -56,8 +60,8 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image_name }}:latest
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image_name }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner }}/${{ matrix.image_name }}:latest
+            ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner }}/${{ matrix.image_name }}:${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             NEXT_PUBLIC_API_URL=https://api.your-domain.com
@@ -72,10 +76,14 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lower case owner name
+        id: owner
+        run: echo "owner=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Update Image Tags
         run: |
           for service in auth-service posts-service api-gateway frontend; do
-            sed -i "s|image: .*$service:.*|image: ${{ env.REGISTRY }}/${{ github.repository_owner }}/$service:${{ github.sha }}|g" k8s/*.yaml
+            sed -i "s|image: .*$service:.*|image: ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner }}/$service:${{ github.sha }}|g" k8s/*.yaml
           done
         env:
           REGISTRY: ghcr.io
