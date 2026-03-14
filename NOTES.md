@@ -154,4 +154,37 @@ You MUST add your `GOOGLE_CLIENT_ID` to GitHub Secrets. Failure to do so means t
 5. **Secret**: `your_client_id.apps.googleusercontent.com`
 6. Click **Add secret**.
 
-_(The frontend URL and other runtime variables are dynamically passed, but Next.js `NEXT_PUBLIC_` variables are physically built into the Docker image, so this is strictly required!)_
+_(The frontend URL and other runtime variables are dynamically passed, but Next.js `NEXT_PUBLIC_` variables are physically built into the Docker image, so this is strictly required!)\_
+
+---
+
+## 🎨 5. Personalization & Customization (For New Users)
+
+If you are cloning this boilerplate to start your own project, you need to update a few hardcoded values to point to your own GitHub Organization and Repository.
+
+### Step 1: Search and Replace
+
+Search the entire repository for `luff-org` and replace it with your own **GitHub Username** or **Organization Name** (in lowercase).
+
+- **Impacts**: K8s image paths, Docker tags, and CI/CD registry paths.
+
+### Step 2: Update ArgoCD Repo URL
+
+Open `argocd/application.yaml` and update the `repoURL` to point to your new fork or repository:
+
+```yaml
+repoURL: https://github.com/YOUR_ORG/YOUR_REPO.git
+```
+
+### Step 3: Update Production API URL
+
+Open `.github/workflows/pipeline.yml` and update the `NEXT_PUBLIC_API_URL` under the `Build & Push` job to your actual production domain:
+
+```yaml
+build-args: |
+  NEXT_PUBLIC_API_URL=https://api.your-actual-domain.com
+```
+
+### Step 4: Database Names & Secrets
+
+If you change the service names or database names in the `k8s/` manifests, remember to update the corresponding `DATABASE_URL` strings in your **Kubernetes Secrets** (Step 1.3 above).
