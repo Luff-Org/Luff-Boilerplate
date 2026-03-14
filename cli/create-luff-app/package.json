@@ -1,18 +1,19 @@
 {
   "name": "create-luff-app",
-  "version": "1.0.1",
-  "description": "The official CLI to scaffold the Luff Microservices Boilerplate",
-  "main": "bin/cli.js",
+  "version": "1.0.2",
+  "description": "CLI to scaffold the Luff Microservices Boilerplate",
   "bin": {
     "create-luff-app": "bin/cli.js"
   },
   "scripts": {
     "publish-cli": "npm publish --access public"
   },
+  "dependencies": {
+    "degit": "^2.8.4"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Luff-Org/Luff-Boilerplate"
   },
-  "author": "",
   "license": "MIT"
 }
