@@ -13,7 +13,6 @@ RUN npm install --workspace=@backend/payment
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/backend/payment/node_modules ./backend/payment/node_modules
 COPY shared/ ./shared/
 COPY backend/payment/ ./backend/payment/
 COPY tsconfig.base.json ./
@@ -27,7 +26,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
 COPY --from=builder /app/backend/payment/dist ./dist
-COPY --from=builder /app/backend/payment/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/payment/package.json ./
 USER appuser
 EXPOSE 4003
