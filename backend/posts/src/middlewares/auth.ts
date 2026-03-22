@@ -8,10 +8,11 @@ export interface AuthRequest extends Request {
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
-  const token = req.headers.authorization?.replace('Bearer ', '');
+  const authHeader = req.headers.authorization;
+  const token = authHeader && /^Bearer /i.test(authHeader) ? authHeader.split(' ')[1] : null;
 
   if (!token) {
-    res.status(401).json({ success: false, error: 'Unauthorized' });
+    res.status(401).json({ success: false, error: 'Unauthorized: Missing or malformed token' });
     return;
   }
 
