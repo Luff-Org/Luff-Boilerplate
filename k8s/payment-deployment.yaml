@@ -27,9 +27,15 @@ spec:
             - name: NODE_ENV
               value: production
             - name: RAZORPAY_KEY_ID
-              value: 'rzp_test_placeholder'
+              valueFrom:
+                secretKeyRef:
+                  name: payment-secrets
+                  key: razorpay-id
             - name: RAZORPAY_KEY_SECRET
-              value: 'placeholder_secret'
+              valueFrom:
+                secretKeyRef:
+                  name: payment-secrets
+                  key: razorpay-secret
           readinessProbe:
             httpGet:
               path: /health

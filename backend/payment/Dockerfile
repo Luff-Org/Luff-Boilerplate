@@ -7,6 +7,7 @@ COPY backend/payment/package.json ./backend/payment/
 COPY shared/types/package.json ./shared/types/
 COPY shared/logger/package.json ./shared/logger/
 COPY shared/config/package.json ./shared/config/
+RUN npm pkg delete scripts.prepare
 RUN npm install --workspace=@backend/payment
 
 FROM base AS builder
