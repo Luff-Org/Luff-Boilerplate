@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createLogger } from '@shared/logger';
 
 import { env } from './config/env';
 import { requestLogger } from './middlewares/logger';
 import { rateLimiter } from './middlewares/rate-limit';
+import { authProxy, postsProxy, paymentProxy } from './routes/proxy';
 
 const log = createLogger('api-gateway');
 const app = express();
@@ -22,30 +22,13 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Proxy /auth/* → auth service
-app.use(
-  '/auth',
-  createProxyMiddleware({
-    target: env.AUTH_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: (_path, req: any) => req.originalUrl,
-    on: {
-      error: (err) => log.error({ err }, 'Auth proxy error'),
-    },
-  }),
-);
+app.use('/auth', authProxy);
 
 // Proxy /posts/* → posts service
-app.use(
-  '/posts',
-  createProxyMiddleware({
-    target: env.POSTS_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: (_path, req: any) => req.originalUrl,
-    on: {
-      error: (err) => log.error({ err }, 'Posts proxy error'),
-    },
-  }),
-);
+app.use('/posts', postsProxy);
+
+// Proxy /payments/* → payment service
+app.use('/payments', paymentProxy);
 
 app.listen(env.PORT, () => {
   log.info(`API Gateway running on port ${env.PORT}`);

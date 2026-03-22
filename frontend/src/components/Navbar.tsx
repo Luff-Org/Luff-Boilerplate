@@ -16,6 +16,9 @@ export function Navbar() {
           <Link href="/posts" className="text-sm text-gray-600 hover:text-gray-900">
             Posts
           </Link>
+          <Link href="/store" className="text-sm text-gray-600 hover:text-gray-900">
+            Store
+          </Link>
           {isAuthenticated && (
             <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
               Dashboard
@@ -30,13 +33,19 @@ export function Navbar() {
             <div className="flex items-center gap-4">
               <Link href="/profile" className="flex items-center gap-2 group">
                 {user.picture ? (
-                  <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full border border-gray-200" />
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="w-8 h-8 rounded-full border border-gray-200"
+                  />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold">
                     {user.name?.charAt(0)}
                   </div>
                 )}
-                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{user.name}</span>
+                <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+                  {user.name}
+                </span>
               </Link>
               <button
                 onClick={logout}

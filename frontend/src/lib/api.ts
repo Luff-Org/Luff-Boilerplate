@@ -61,3 +61,18 @@ export async function createPost(dto: { title: string; content: string }) {
 export async function deletePost(id: string) {
   await api.delete(`/posts/${id}`);
 }
+
+// Payments
+export async function createPaymentOrder(amount: number) {
+  const { data } = await api.post('/payments/create-order', {
+    amount,
+    currency: 'INR',
+    receipt: `receipt_${Date.now()}`,
+  });
+  return data.order;
+}
+
+export async function verifyPayment(paymentData: any) {
+  const { data } = await api.post('/payments/verify-payment', paymentData);
+  return data;
+}

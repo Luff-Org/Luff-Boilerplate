@@ -9,6 +9,7 @@ function createServiceProxy(target: string, pathPrefix: string) {
   const options: Options = {
     target,
     changeOrigin: true,
+    pathRewrite: (_path, req: any) => req.originalUrl,
     on: {
       proxyReq: (_proxyReq, req) => {
         log.info({ target, path: req.url }, `Proxying ${pathPrefix} request`);
@@ -16,10 +17,12 @@ function createServiceProxy(target: string, pathPrefix: string) {
       error: (err, _req, res) => {
         log.error({ err, target }, 'Proxy error');
         if ('writeHead' in res && typeof res.writeHead === 'function') {
-          (res as import('http').ServerResponse)
-            .writeHead(502, { 'Content-Type': 'application/json' });
-          (res as import('http').ServerResponse)
-            .end(JSON.stringify({ success: false, error: 'Service unavailable' }));
+          (res as import('http').ServerResponse).writeHead(502, {
+            'Content-Type': 'application/json',
+          });
+          (res as import('http').ServerResponse).end(
+            JSON.stringify({ success: false, error: 'Service unavailable' }),
+          );
         }
       },
     },
@@ -30,3 +33,4 @@ function createServiceProxy(target: string, pathPrefix: string) {
 
 export const authProxy = createServiceProxy(env.AUTH_SERVICE_URL, '/auth');
 export const postsProxy = createServiceProxy(env.POSTS_SERVICE_URL, '/posts');
+export const paymentProxy = createServiceProxy(env.PAYMENT_SERVICE_URL, '/payments');
