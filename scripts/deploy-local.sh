@@ -36,14 +36,16 @@ docker build -t ghcr.io/$REGISTRY_ORG/auth-service:$SHA -f backend/auth/Dockerfi
 echo "📦 Building Posts Service Image..."
 docker build -t ghcr.io/$REGISTRY_ORG/posts-service:$SHA -f backend/posts/Dockerfile .
 
+echo "📦 Building Payment Service Image..."
+docker build -t ghcr.io/$REGISTRY_ORG/payment-service:$SHA -f backend/payment/Dockerfile .
+
 # Since our K8s manifests use `IfNotPresent`, and Docker Desktop / Minikube
-# share the local image cache or require pushing to local registry,
-# we need to force a restart of the pods to pull/use the new image immediately.
 echo ""
 echo "♻️  Restarting Kubernetes Pods..."
 kubectl delete pods -l app=frontend || true
 kubectl delete pods -l app=auth-service || true
 kubectl delete pods -l app=posts-service || true
+kubectl delete pods -l app=payment-service || true
 kubectl delete pods -l app=api-gateway || true
 
 echo ""
