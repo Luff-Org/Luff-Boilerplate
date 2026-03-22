@@ -18,10 +18,15 @@ docker compose -f docker/docker-compose.yml up -d auth-db posts-db
 # 3. K8s Secrets Setup (The "relevant" part - ensuring K8s knows our IDs)
 echo "🔑 Syncing K8s Secrets..."
 kubectl create secret generic auth-secrets \
-  --from-literal=database-url="${DATABASE_URL:-postgresql://postgres:postgres@auth-db:5432/auth_db}" \
+  --from-literal=database-url="postgresql://postgres:postgres@host.docker.internal:5433/auth_db" \
   --from-literal=jwt-secret="${JWT_SECRET:-local-secret}" \
   --from-literal=google-client-id="${GOOGLE_CLIENT_ID:-dummy}" \
   --from-literal=google-client-secret="${GOOGLE_CLIENT_SECRET:-dummy}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret generic posts-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres@host.docker.internal:5434/posts_db" \
+  --from-literal=jwt-secret="${JWT_SECRET:-local-secret}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic payment-secrets \
@@ -49,9 +54,15 @@ fi
 
 # 5. Apply Manifests & Scale
 echo "☸️ Applying Kubernetes Manifests..."
-# Update images in manifests (sed is a quick way for local dev)
-# Note: In a real CI we'd use kustomize or helm, but for this script we just apply.
+# Update images in manifests to use the locally built ones
+echo "🖼️  Updating deployment images to locally built ones..."
 kubectl apply -f k8s/
+
+kubectl set image deployment/api-gateway api-gateway=ghcr.io/$REGISTRY_ORG/api-gateway:$TAG
+kubectl set image deployment/auth-service auth-service=ghcr.io/$REGISTRY_ORG/auth-service:$TAG
+kubectl set image deployment/posts-service posts-service=ghcr.io/$REGISTRY_ORG/posts-service:$TAG
+kubectl set image deployment/payment-service payment-service=ghcr.io/$REGISTRY_ORG/payment-service:$TAG
+kubectl set image deployment/frontend-deployment frontend=ghcr.io/$REGISTRY_ORG/frontend:$TAG
 
 # Ensure everything is scaled up
 kubectl scale deployment --all --replicas=1 -n default
