@@ -35,15 +35,21 @@ kubectl create secret generic payment-secrets \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # 4. Selective Build
-# Only build if "build" argument is passed, or if images don't exist
 BUILD_ALL=${1:-""}
-if [ "$BUILD_ALL" == "build" ]; then
-    echo "📦 Building all images..."
-    docker build -t ghcr.io/$REGISTRY_ORG/api-gateway:$TAG -f backend/api-gateway/Dockerfile .
-    docker build -t ghcr.io/$REGISTRY_ORG/auth-service:$TAG -f backend/auth/Dockerfile .
-    docker build -t ghcr.io/$REGISTRY_ORG/posts-service:$TAG -f backend/posts/Dockerfile .
-    docker build -t ghcr.io/$REGISTRY_ORG/payment-service:$TAG -f backend/payment/Dockerfile .
-    docker build \
+if [ "$BUILD_ALL" == "build" ] || [ "$BUILD_ALL" == "build-clean" ]; then
+    CACHE_FLAG=""
+    if [ "$BUILD_ALL" == "build-clean" ]; then
+        echo "🧹 Performing Clean Build (No Cache)..."
+        CACHE_FLAG="--no-cache"
+    else
+        echo "📦 Building images..."
+    fi
+    
+    docker build $CACHE_FLAG -t ghcr.io/$REGISTRY_ORG/api-gateway:$TAG -f backend/api-gateway/Dockerfile .
+    docker build $CACHE_FLAG -t ghcr.io/$REGISTRY_ORG/auth-service:$TAG -f backend/auth/Dockerfile .
+    docker build $CACHE_FLAG -t ghcr.io/$REGISTRY_ORG/posts-service:$TAG -f backend/posts/Dockerfile .
+    docker build $CACHE_FLAG -t ghcr.io/$REGISTRY_ORG/payment-service:$TAG -f backend/payment/Dockerfile .
+    docker build $CACHE_FLAG \
       --build-arg NEXT_PUBLIC_GOOGLE_CLIENT_ID="${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}" \
       --build-arg NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:4000}" \
       --build-arg NEXT_PUBLIC_RAZORPAY_KEY_ID="${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}" \

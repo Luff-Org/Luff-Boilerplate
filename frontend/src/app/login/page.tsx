@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FcGoogle } from 'react-icons/fc';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginWithGoogle, getMe, logoutUser } from '@/lib/api';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 import { useRouter } from 'next/navigation';
 

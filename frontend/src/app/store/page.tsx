@@ -5,7 +5,7 @@ import Script from 'next/script';
 import { createPaymentOrder, verifyPayment } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 
 const products = [
   {
