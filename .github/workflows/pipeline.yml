@@ -26,11 +26,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Clients
+        run: |
+          npx prisma generate --workspace=@backend/auth
+          npx prisma generate --workspace=@backend/posts
+
       - name: Build & Type Check
         run: npm run build
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || 'dummy' }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || 'dummy' }}
+          NEXT_TELEMETRY_DISABLED: 1
 
       - name: Lint
         run: npm run lint
