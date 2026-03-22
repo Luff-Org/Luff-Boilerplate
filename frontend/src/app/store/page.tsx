@@ -5,6 +5,7 @@ import Script from 'next/script';
 import { createPaymentOrder, verifyPayment } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const products = [
   {
@@ -65,13 +66,13 @@ export default function StorePage() {
             });
 
             if (verification.success) {
-              alert('Payment Successful!');
+              toast.success('Payment Successful!');
             } else {
-              alert('Payment Verification Failed!');
+              toast.error('Payment Verification Failed!');
             }
           } catch (error) {
             console.error('Verification error:', error);
-            alert('Something went wrong during verification');
+            toast.error('Something went wrong during verification');
           }
         },
         prefill: {
@@ -87,7 +88,7 @@ export default function StorePage() {
       rzp.open();
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Failed to initiate payment');
+      toast.error('Failed to initiate payment');
     } finally {
       setLoading(null);
     }

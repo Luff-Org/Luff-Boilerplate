@@ -5,6 +5,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
 import { Providers } from './providers';
 import { Navbar } from '@/components/Navbar';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata: Metadata = {
   title: 'Microservices Boilerplate',
@@ -20,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleOAuthProvider clientId={clientId}>
           <Providers>
             <Navbar />
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
             <main>{children}</main>
           </Providers>
         </GoogleOAuthProvider>

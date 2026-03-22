@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPosts, createPost, deletePost } from '@/lib/api';
+import { toast } from 'react-toastify';
 
 export default function PostsPage() {
   const queryClient = useQueryClient();
@@ -10,12 +11,24 @@ export default function PostsPage() {
 
   const create = useMutation({
     mutationFn: createPost,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Post created successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to create post');
+    },
   });
 
   const remove = useMutation({
     mutationFn: deletePost,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['posts'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      toast.success('Post deleted successfully!');
+    },
+    onError: () => {
+      toast.error('Failed to delete post');
+    },
   });
 
   const [title, setTitle] = useState('');
@@ -37,7 +50,9 @@ export default function PostsPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Create Post</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title
+            </label>
             <input
               id="title"
               value={title}
@@ -48,7 +63,9 @@ export default function PostsPage() {
             />
           </div>
           <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+              Content
+            </label>
             <textarea
               id="content"
               value={content}
@@ -88,7 +105,9 @@ export default function PostsPage() {
                 </button>
               </div>
               <p className="text-gray-600">{post.content}</p>
-              <p className="text-sm text-gray-400 mt-2">{new Date(post.createdAt).toLocaleDateString()}</p>
+              <p className="text-sm text-gray-400 mt-2">
+                {new Date(post.createdAt).toLocaleDateString()}
+              </p>
             </div>
           ))}
           {posts?.length === 0 && (

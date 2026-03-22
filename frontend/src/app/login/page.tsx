@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FcGoogle } from 'react-icons/fc';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginWithGoogle, getMe, logoutUser } from '@/lib/api';
+import { toast } from 'react-toastify';
 
 import { useRouter } from 'next/navigation';
 
@@ -13,25 +14,24 @@ export default function LoginPage() {
   const router = useRouter();
   const { data: user, isLoading } = useQuery({ queryKey: ['me'], queryFn: getMe, retry: false });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const googleLogin = useGoogleLogin({
     flow: 'auth-code',
     onSuccess: async (codeResponse) => {
       try {
         setLoading(true);
-        setError(null);
         await loginWithGoogle(codeResponse.code);
         await queryClient.invalidateQueries({ queryKey: ['me'] });
+        toast.success('Login successful!');
         router.push('/dashboard');
         router.refresh();
       } catch (err: any) {
-        setError(err.response?.data?.message || 'Login failed. Please try again.');
+        toast.error(err.response?.data?.message || 'Login failed. Please try again.');
         setLoading(false);
       }
     },
     onError: () => {
-      setError('Google popup closed or failed.');
+      toast.error('Google popup closed or failed.');
     },
   });
 
@@ -53,9 +53,7 @@ export default function LoginPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 w-full max-w-md">
         <h1 className="text-2xl font-bold text-gray-900 text-center">Sign In</h1>
         <p className="text-gray-500 text-center mt-2 mb-6">Continue with your Google account</p>
-        
-        {error && <div className="mb-4 p-3 text-sm text-red-700 bg-red-50 rounded-lg">{error}</div>}
-        
+
         <button
           onClick={() => googleLogin()}
           disabled={loading}
