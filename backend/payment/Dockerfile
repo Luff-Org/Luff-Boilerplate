@@ -26,6 +26,8 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+COPY --from=builder /app/shared ./shared
+RUN rm -rf ./shared/*/src
 COPY --from=builder /app/backend/payment/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/payment/package.json ./
