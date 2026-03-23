@@ -1,44 +1,50 @@
-# Luff Boilerplate
+# 📘 LUFF. Operational Manual
 
-This repository contains a full-stack Next.js + Node.js Microservices architecture boilerplate, ready for local execution and seamless Kubernetes (K8s) deployment via ArgoCD.
+<p align="center">
+  <img src="https://img.shields.io/badge/Mode-Local_Dev-6366f1?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Mode-Kubernetes-34d399?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/CI/CD-GitHub_Actions-f59e0b?style=for-the-badge" />
+</p>
 
-Everything is containerized, fully configured for Google OAuth authentication, and automatically validated with CI/CD.
+> Everything you need to run, deploy, and maintain the LUFF. ecosystem — from local dev to production Kubernetes.
 
 ---
 
-## 🚀 1. Initial Setup Required
+## 🚀 1. Initial Setup
 
-Before running this project for the first time, you must configure your environment locally.
+### Prerequisites
 
-### Prerequisites:
+| Tool | Version | Purpose |
+|:---:|:---:|:---|
+| Node.js | `≥ 20.x` | Runtime for all services |
+| Docker Desktop | `≥ 24.x` | Database containers |
+| kubectl | Latest | Kubernetes management |
+| ArgoCD | Latest | GitOps agent (K8s mode only) |
 
-- **Node.js** (v20+)
-- **Docker** and **Docker Desktop / Minikube**
-- **kubectl** (connected to your local Kubernetes cluster)
-- **ArgoCD** (must be installed on your local Kubernetes cluster)
-
-### Step 1: Install Dependencies & Setup Env Files
-
-We have an automated setup script that installs NPM packages and copies the required `.env.example` files to `.env`.
+### One-Time Setup
 
 ```bash
-npm run setup
+npm run setup    # Installs packages + copies .env files
 ```
 
-Wait for `npm install` and Husky to finish.
+---
 
-### Step 2: Configure Environment Variables
+## ⚙️ 2. Environment Variables
 
-You MUST explicitly provide Google OAuth credentials and URLs for the frontend build and backend authentication to work. Check these three `.env` files and verify their values.
+You **must** configure these `.env` files before the app will fully function:
 
-**1. `frontend/.env`**
+<details>
+<summary><b>frontend/.env</b></summary>
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_your_id
 ```
+</details>
 
-**2. `backend/auth/.env`**
+<details>
+<summary><b>backend/auth/.env</b></summary>
 
 ```env
 PORT=4001
@@ -46,18 +52,24 @@ JWT_SECRET="your-jwt-secret-change-in-production"
 GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret
 FRONTEND_URL=http://localhost:3000
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/auth_db"
 NODE_ENV=development
 ```
+</details>
 
-**3. `backend/posts/.env`**
+<details>
+<summary><b>backend/posts/.env</b></summary>
 
 ```env
 PORT=4002
 JWT_SECRET="your-jwt-secret"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5434/posts_db"
 NODE_ENV=development
 ```
+</details>
 
-**4. `backend/payment/.env`**
+<details>
+<summary><b>backend/payment/.env</b></summary>
 
 ```env
 PORT=4003
@@ -67,150 +79,134 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5435/payment_db"
 JWT_SECRET="your-jwt-secret"
 NODE_ENV=development
 ```
+</details>
 
-### Step 3: Kubernetes Secrets
+<details>
+<summary><b>backend/ai-service/.env</b></summary>
 
-```bash
-# App, Auth & Posts Secrets (...)
-
-# Create Payment Secrets
-kubectl create secret generic payment-secrets \
-  --from-literal=database-url="postgresql://postgres:postgres@payment-db-service:5432/payment_db" \
-  --from-literal=razorpay-key-id="your_key" \
-  --from-literal=razorpay-key-secret="your_secret" \
-  --from-literal=jwt-secret="your-jwt-secret"
+```env
+PORT=4004
+GEMINI_API_KEY=your_gemini_api_key
+UPSTASH_VECTOR_REST_URL=https://your-index.upstash.io
+UPSTASH_VECTOR_REST_TOKEN=your_token
+JWT_SECRET="your-jwt-secret"
+NODE_ENV=development
 ```
+</details>
 
 ---
 
-## 🌟 2. How To Run Locally
+## 🖥️ 3. Running the Project
 
-We support two modes of development:
-
-### 1. Native Mode (Recommended)
-
-This is the fastest loop. Run everything directly on your machine:
+### Option A: Native Mode (Recommended for Dev)
 
 ```bash
 npm run run-local
 ```
 
-This script handles:
+Handles everything: clears port conflicts, starts Docker DBs, launches all services.
 
-- Stopping K8s port conflicts
-- Starting local Docker DBs
-- Running all services via `npm run dev`
+### Option B: Kubernetes Mode (Production)
 
-### 2. Kubernetes Mode (GitOps)
+```mermaid
+flowchart LR
+  A["Build Images"] --> B["Tag with Git SHA"]
+  B --> C["ArgoCD Detects"]
+  C --> D["K8s Deploys"]
+  D --> E["Port Forward"]
 
-Follow this if you want to test the full K8s stack:
-
-1. **Build & Deploy**: `npm run run-k8s build`
-2. **Access Dashboard**: `npm run argo`
-3. **Connect Ports**: `npm run access`
-
-We utilize ArgoCD as the GitOps agent. It constantly monitors your main branch's `k8s/` folder and applies the configuration locally.
-
-### Step 1: Tell ArgoCD to watch your directory
-
-Apply the custom Application configuration directly:
+  style C fill:#065f46,stroke:#34d399,color:#e2e8f0
+```
 
 ```bash
+# 1. Tell ArgoCD to watch your repo
 kubectl apply -f argocd/application.yaml
-```
 
-### Step 2: Build the Local Images (Automated)
-
-Your Kubernetes `Deployment` manifests are configured to pull from `ghcr.io/luff-org/...` with an `IfNotPresent` pull policy. To run the images locally exactly as they are configured in your manifests, **we have created an automation script**.
-
-This script pulls your `.env` Client ID, tags images according to your current commit SHA (what ArgoCD expects), and restarts the Kubernetes pods.
-
-```bash
+# 2. Build & deploy locally
 ./scripts/deploy-local.sh
-```
 
-### Step 3: Port Forwarding
-
-Because we are working locally, we must manually expose K8s services to `localhost`:
-
-```bash
-# Terminal 1 - For the Frontend Application
+# 3. Forward ports to localhost
 kubectl port-forward svc/frontend-service 3000:3000
-
-# Terminal 2 - For the API Gateway (Backend)
 kubectl port-forward svc/api-gateway 4000:4000
 ```
 
-Visit `http://localhost:3000` — Your Google OAuth login will be functioning seamlessly.
+### Kubernetes Secrets
 
----
+```bash
+# Auth secrets
+kubectl create secret generic auth-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres@auth-db-service:5432/auth_db" \
+  --from-literal=google-client-id="your_id" \
+  --from-literal=google-client-secret="your_secret" \
+  --from-literal=jwt-secret="your-jwt-secret"
 
-## 🔄 3. What To Do Whenever You Run This Afterwards
+# Payment secrets
+kubectl create secret generic payment-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres@payment-db-service:5432/payment_db" \
+  --from-literal=razorpay-key-id="your_key" \
+  --from-literal=razorpay-key-secret="your_secret" \
+  --from-literal=jwt-secret="your-jwt-secret"
 
-When returning to development on a new day, you **DO NOT** need to repeat the secret configuration or ArgoCD setup. You just have to build any new changes and run your port-forwards.
-
-1. **Commit your code to Git**: Or ArgoCD will desync!
-2. **Run the Automation Script**: To push the newest changes directly to your local cluster:
-   ```bash
-   ./scripts/deploy-local.sh
-   ```
-3. **Start your tunnels**:
-   ```bash
-   kubectl port-forward svc/frontend-service 3000:3000
-   kubectl port-forward svc/api-gateway 4000:4000
-   ```
-
-_(Alternatively, if you only want to develop quickly on your host machine WITHOUT Kubernetes, you can bypass Docker altogether by running `npm run dev` in the root folder!)_
-
----
-
-## 🤖 4. Ensuring Automation Works (GitHub Actions CI/CD)
-
-Whenever you push to `main` on GitHub, our unified pipeline (`.github/workflows/pipeline.yml`) runs automatically.
-
-**To ensure this workflow succeeds on the cloud:**
-You MUST add your `GOOGLE_CLIENT_ID` to GitHub Secrets. Failure to do so means the Cloud-built Docker image will have an empty Google Client ID baked into its statically-generated frontend!
-
-**Go to GitHub**:
-
-1. Open Repository > `Settings`
-2. Navigate to `Secrets and variables` > `Actions`
-3. Click `New repository secret`
-4. **Name**: `GOOGLE_CLIENT_ID`
-5. **Secret**: `your_client_id.apps.googleusercontent.com`
-6. Click **Add secret**.
-
-_(The frontend URL and other runtime variables are dynamically passed, but Next.js `NEXT_PUBLIC_` variables are physically built into the Docker image, so this is strictly required!)\_
-
----
-
-## 🎨 5. Personalization & Customization (For New Users)
-
-If you are cloning this boilerplate to start your own project, you need to update a few hardcoded values to point to your own GitHub Organization and Repository.
-
-### Step 1: Search and Replace
-
-Search the entire repository for `luff-org` and replace it with your own **GitHub Username** or **Organization Name** (in lowercase).
-
-- **Impacts**: K8s image paths, Docker tags, and CI/CD registry paths.
-
-### Step 2: Update ArgoCD Repo URL
-
-Open `argocd/application.yaml` and update the `repoURL` to point to your new fork or repository:
-
-```yaml
-repoURL: https://github.com/YOUR_ORG/YOUR_REPO.git
+# AI secrets
+kubectl create secret generic ai-secrets \
+  --from-literal=gemini-api-key="your_gemini_key" \
+  --from-literal=upstash-vector-rest-url="your_url" \
+  --from-literal=upstash-vector-rest-token="your_token" \
+  --from-literal=jwt-secret="your-jwt-secret"
 ```
 
-### Step 3: Update Production API URL
+---
 
-Open `.github/workflows/pipeline.yml` and update the `NEXT_PUBLIC_API_URL` under the `Build & Push` job to your actual production domain:
+## 🔄 4. Daily Development Workflow
 
-```yaml
-build-args: |
-  NEXT_PUBLIC_API_URL=https://api.your-actual-domain.com
+> After initial setup, you **don't** need to reconfigure secrets or ArgoCD.
+
+| Mode | Daily Steps |
+|:---|:---|
+| **Native** | Just run `npm run run-local` |
+| **K8s** | `./scripts/deploy-local.sh` → Port forward |
+
+---
+
+## 🤖 5. CI/CD Pipeline
+
+```mermaid
+flowchart TD
+  A["📝 Push to main"] --> B["GitHub Actions"]
+  B --> C["ESLint + TypeScript"]
+  C --> D["Build Docker Images"]
+  D --> E["Push to ghcr.io"]
+  E --> F["ArgoCD Sync"]
+  F --> G["K8s Rolling Update"]
+
+  style F fill:#065f46,stroke:#34d399,color:#e2e8f0
 ```
 
-### Step 4: Database Names & Secrets
+> **⚠️ Important**: Add `GOOGLE_CLIENT_ID` to GitHub Repository Secrets. Next.js `NEXT_PUBLIC_` variables are baked into the Docker image at build time.
 
-If you change the service names or database names in the `k8s/` manifests, remember to update the corresponding `DATABASE_URL` strings in your **Kubernetes Secrets** (Step 1.3 above).
+### Adding the GitHub Secret
+
+1. Repository → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `GOOGLE_CLIENT_ID` → Value: `your_client_id.apps.googleusercontent.com`
+
+---
+
+## 🎨 6. Customization Guide
+
+When forking for your own project, search and replace these values:
+
+| Find | Replace With | Affects |
+|:---|:---|:---|
+| `luff-org` | Your GitHub org (lowercase) | K8s images, Docker tags, CI/CD |
+| `Luff-Org` | Your GitHub org | Git URLs, ArgoCD config |
+| `Luff-Boilerplate` | Your repo name | Clone URLs, package names |
+
+### Key Files to Update
+
+| File | What to Change |
+|:---|:---|
+| `argocd/application.yaml` | `repoURL` → your repository |
+| `.github/workflows/pipeline.yml` | `NEXT_PUBLIC_API_URL` → your domain |
+| `k8s/*.yaml` | Image paths → your registry |
+| All `DATABASE_URL` strings | If you rename databases |

@@ -1,136 +1,342 @@
-# 📘 Luff Boilerplate Technical Manual
+# 📘 LUFF. Technical Manual
 
-This document provides an end-to-end technical deep-dive into the architecture, implementation, and operational flows of the Luff Microservices Boilerplate.
+<p align="center">
+  <img src="https://img.shields.io/badge/Architecture-Microservices-6366f1?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Pattern-Monorepo-34d399?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Auth-Stateless_JWT-f59e0b?style=for-the-badge" />
+</p>
 
----
-
-## 🏗️ 1. High-Level Architecture
-
-The boilerplate is a **Monorepo** using **NPM Workspaces** and **Turborepo** to manage multiple independent services and shared code.
-
-### The Flow:
-
-1. **User** accesses the **Frontend (Next.js)**.
-2. The Frontend communicates ONLY with the **API Gateway**.
-3. The **API Gateway** acts as a Reverse Proxy, forwarding requests to the appropriate microservice (Auth, Posts, or Payment).
-4. Each microservice has its own **isolated PostgreSQL database** managed by **Prisma**.
+> A comprehensive deep-dive into every architectural decision, data flow, and service boundary in the LUFF. ecosystem.
 
 ---
 
-## 🛡️ 2. Authentication & Security (End-to-End)
+## 🧬 1. System Architecture
 
-We use a **Stateless JWT-based Authentication** system.
+```mermaid
+graph TB
+  subgraph "Client Layer"
+    U["👤 User"] --> FE["🖥️ Next.js 14 Frontend<br/><i>:3000 • React Query • Tailwind</i>"]
+  end
 
-### A. The Login Flow:
+  subgraph "Orchestration Layer"
+    FE -->|"All API traffic"| GW["🛡️ API Gateway<br/><i>:4000 • CORS • Rate Limit</i>"]
+  end
 
-1. **Frontend**: The user clicks "Login with Google". We use `@react-oauth/google` to get a `postMessage` token.
-2. **Auth Service**: The backend receives the Google credential, validates it with Google servers, and checks if the user exists in the `Auth DB`.
-3. **JWT Generation**: The Auth Service signs a JWT containing the `userId`.
-4. **JWT Storage**: The Frontend stores this JWT in `localStorage`.
+  subgraph "Domain Services"
+    GW -->|"/auth/*"| AUTH["🔐 Auth Service<br/><i>:4001</i>"]
+    GW -->|"/posts/*"| POSTS["📝 Posts Service<br/><i>:4002</i>"]
+    GW -->|"/payments/*"| PAY["💳 Payment Service<br/><i>:4003</i>"]
+    GW -->|"/ai/*"| AI["🧠 AI Service<br/><i>:4004</i>"]
+  end
 
-### B. Authenticated Requests:
+  subgraph "Data Layer"
+    AUTH --> DB1[("🗄️ auth_db<br/>:5433")]
+    POSTS --> DB2[("🗄️ posts_db<br/>:5434")]
+    PAY --> DB3[("🗄️ payment_db<br/>:5435")]
+    AI --> VS["🔮 Upstash Vector"]
+    AI --> GM["✨ Gemini 2.5 Flash"]
+  end
 
-1. For every protected request (e.g., `POST /posts`), the Frontend attaches the JWT to the `Authorization: Bearer <token>` header.
-2. **Gateway**: Passes the request through to the target service.
-3. **Auth Middleware**: Every service (Posts, Payment) has an `authMiddleware`. It parses the JWT using the shared `JWT_SECRET`. If valid, it attaches `req.user` to the request object. If invalid/missing, it returns `401 Unauthorized`.
+  style AI fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  style GM fill:#7c3aed,stroke:#a78bfa,color:#e2e8f0
+  style GW fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
+```
 
----
+### Key Principles
 
-## 📡 3. Microservices Directory
-
-### 🟢 API Gateway (Port 4000)
-
-- **Role**: Entry point for all backend traffic.
-- **Tech**: Express + `http-proxy-middleware`.
-- **Logic**: Routes `/auth/*` → Port 4001, `/posts/*` → Port 4002, `/payment/*` → Port 4003.
-- **Security**: Implements CORS (allowing `localhost:3000`) and basic rate limiting.
-
-### 🔐 Auth Service (Port 4001)
-
-- **Database**: `auth_db` (Postgres).
-- **Key Logic**: Manages User profiles and Google OAuth integration.
-- **Routes**:
-  - `POST /auth/google`: Handles OAuth login/signup.
-  - `GET /auth/me`: Returns the current user's profile.
-
-### 📝 Posts Service (Port 4002)
-
-- **Database**: `posts_db` (Postgres).
-- **Key Logic**: CRUD operations for user posts.
-- **Database**: `posts_db` (Postgres).
-- **Key Logic**: CRUD operations for user posts.
-- **Routes**:
-  - `GET /posts`: Publicly list all posts.
-  - `POST /posts`: (Protected) Create a new post.
-  - `DELETE /posts/:id`: (Protected) Delete a post (owner only).
-
-### 💳 Payment Service (Port 4003)
-
-- **Database**: `payment_db` (Postgres) — Stores transaction metadata.
-- **Key Logic**: Handles server-side order creation and payment verification via Razorpay SDK.
-- **Routes**:
-  - `POST /payments/create-order`: Generates a Razorpay `order_id`.
-  - `POST /payments/verify`: Validates the payment signature using your secret key.
-  - `GET /payments/my-purchases`: (Protected) Fetches the user's successful transaction history.
+| Principle | Implementation |
+|:---|:---|
+| **Service Isolation** | Each microservice has its own DB, Prisma schema, and deployment unit |
+| **Single Entry Point** | All traffic flows through the API Gateway — no direct service access |
+| **Stateless Auth** | JWT tokens with no server-side sessions |
+| **Domain Boundaries** | Auth, Content, Payments, and Intelligence are separate domains |
 
 ---
 
-## 🔑 4. Credentials Checklist
+## 🧠 2. AI Service — Deep Dive
 
-To run the boilerplate end-to-end, you need:
+The AI domain is the most architecturally significant service — providing production-ready intelligence.
 
-| Platform     | Secret               | Where to put it                        |
-| :----------- | :------------------- | :------------------------------------- |
-| **Google**   | `CLIENT_ID / SECRET` | `backend/auth/.env` & `frontend/.env`  |
-| **Razorpay** | `KEY_ID / SECRET`    | `backend/payment/.env`                 |
-| **Monorepo** | `JWT_SECRET`         | Shared across all backend `.env` files |
+### RAG Pipeline Flow
 
----
+```mermaid
+flowchart LR
+  subgraph "Ingestion Pipeline"
+    A["📄 PDF Upload"] --> B["📦 pdfjs-dist<br/><i>Text Extraction</i>"]
+    B --> C["✂️ Recursive<br/>Text Splitter"]
+    C --> D["🔢 768-dim<br/>Embeddings"]
+    D --> E["☁️ Upstash<br/>Vector Store"]
+  end
 
-## 🗄️ 5. Shared Packages (`/shared`)
+  subgraph "Query Pipeline"
+    F["💬 User Question"] --> G["🔍 Semantic<br/>Search"]
+    E -.->|"Top-K Results"| G
+    G --> H["📋 Context<br/>Assembly"]
+    H --> I["✨ Gemini 2.5<br/>Flash"]
+    I --> J["💬 Grounded<br/>Response"]
+  end
 
-To maintain "DRY" (Don't Repeat Yourself) code, we use internal packages:
+  style I fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  style E fill:#065f46,stroke:#34d399,color:#e2e8f0
+```
 
-- **`@shared/config`**: Centralized environment variable management.
-- **`@shared/logger`**: Unified pino-based logging across all services.
-- **`@shared/types`**: Shared TypeScript interfaces (e.g., `User`, `Post`).
+### AI Capabilities
 
----
+| Feature | Technology | Details |
+|:---|:---|:---|
+| **Chat** | Gemini 2.5 Flash | Direct conversational AI with low latency |
+| **RAG** | Upstash Vector | PDF-grounded answers using semantic retrieval |
+| **Embeddings** | 768-dimensional | Optimized for Gemini's embedding model |
+| **PDF Parsing** | pdfjs-dist | Multi-page document extraction |
 
-## ⚙️ 5. DevOps & Automation
+### AI Routes
 
-### A. Local Development Workflow
-
-We built `scripts/run-local.sh` to solve the "Kubernetes vs. Local" port conflict.
-
-- **Native Dev**: Runs `npm run dev` in the root. Services talk to each other directly on `localhost`.
-- **K8s Dev**: Uses `run-on-k8s.sh`. Images are built, tagged with the current Git SHA, and deployed to your local cluster.
-
-### B. CI/CD Pipeline
-
-- **GitHub Actions**: Every push to `main` triggers `.github/workflows/pipeline.yml`.
-- **Lint & Build**: Validates code quality and type safety.
-- **Docker Build**: Builds production-ready Alpine images.
-- **ArgoCD**: Monitors the `/k8s` folder. As soon as CI pushes new image tags to the manifests, ArgoCD "Syncs" and redeploys your local cluster!
-
----
-
-## 🎨 6. Frontend Architecture
-
-### A. State Management
-
-- **React Query**: Handles all server-state (fetching posts, user data).
-- **Global Context**: `providers.tsx` wraps the app with the necessary providers (QueryClient, Toaster).
-
-### B. UI & Feedback
-
-- **Sonner**: Used for premium, animated notifications. Every server action (Success/Error) triggers a toast.
-- **TailwindCSS**: Used for all styling (no generic CSS).
+| Route | Method | Auth | Description |
+|:---|:---:|:---:|:---|
+| `POST /ai/ask` | POST | ✅ | Send a message, get AI response (generic or RAG) |
+| `POST /ai/upload-pdf` | POST | ✅ | Upload PDF for RAG indexing |
 
 ---
 
-## 💡 7. Pro-Tips for Extending
+## 🔐 3. Authentication — End-to-End Flow
 
-1. **Add a new service**: Use `npm run create-service`.
-2. **Add a DB field**: Update `schema.prisma` in the service, then run `npm run db:push --workspace=@backend/yourservice`.
-3. **Debug a Service**: Look for logs prefixed with the service name in your terminal (thanks to Turborepo!).
+```mermaid
+sequenceDiagram
+  participant U as 👤 User
+  participant F as 🖥️ Frontend
+  participant G as 🔑 Google OAuth
+  participant A as 🔐 Auth Service
+  participant DB as 🗄️ Auth DB
+
+  rect rgb(30, 27, 75)
+    Note over U,DB: Login Flow
+    U->>F: Click "Login with Google"
+    F->>G: Open OAuth Popup
+    G-->>F: credential (ID Token)
+    F->>A: POST /auth/google
+    A->>G: Verify token with Google servers
+    G-->>A: { email, name, picture }
+    A->>DB: Upsert user record
+    A->>A: Sign JWT { userId, email }
+    A-->>F: { token, user }
+    F->>F: Store JWT in localStorage
+  end
+
+  rect rgb(6, 95, 70)
+    Note over U,DB: Authenticated Request
+    U->>F: Navigate to protected page
+    F->>A: GET /auth/me (Bearer token)
+    A->>A: Verify JWT signature
+    A->>DB: Fetch user by ID
+    A-->>F: { user profile }
+  end
+```
+
+### How JWT Flows Across Services
+
+```mermaid
+flowchart LR
+  A["🖥️ Frontend<br/><i>Attaches JWT</i>"] --> B["🛡️ Gateway<br/><i>Passes through</i>"]
+  B --> C["🔐 Auth Middleware<br/><i>In every service</i>"]
+  C -->|"Valid"| D["✅ req.user attached"]
+  C -->|"Invalid"| E["❌ 401 Unauthorized"]
+
+  style C fill:#92400e,stroke:#f59e0b,color:#e2e8f0
+```
+
+> Every backend service shares the same `JWT_SECRET` and runs identical middleware. The Gateway does **not** validate tokens — each service handles its own auth.
+
+### Auth Routes
+
+| Route | Method | Auth | Description |
+|:---|:---:|:---:|:---|
+| `POST /auth/google` | POST | ❌ | Exchange Google token for JWT |
+| `GET /auth/me` | GET | ✅ | Get current user profile |
+
+---
+
+## 💳 4. Payment Service — Transaction Architecture
+
+```mermaid
+sequenceDiagram
+  participant U as 👤 User
+  participant F as 🖥️ Frontend
+  participant P as 💳 Payment Service
+  participant R as 🏦 Razorpay API
+  participant DB as 🗄️ Payment DB
+
+  rect rgb(59, 31, 43)
+    Note over U,DB: Purchase Flow
+    U->>F: Click "Buy" on Store page
+    F->>P: POST /payments/create-order { amount }
+    P->>R: razorpay.orders.create()
+    R-->>P: { order_id, amount, currency }
+    P-->>F: Return order details
+
+    F->>R: Open Razorpay Checkout Modal
+    U->>R: Enter card / UPI details
+    R-->>F: { razorpay_payment_id, razorpay_signature }
+
+    F->>P: POST /payments/verify
+    P->>P: HMAC-SHA256 signature verification
+    P->>DB: INSERT transaction record ✅
+    P-->>F: { success: true }
+  end
+```
+
+### Payment Routes
+
+| Route | Method | Auth | Description |
+|:---|:---:|:---:|:---|
+| `POST /payments/create-order` | POST | ✅ | Generate Razorpay order ID |
+| `POST /payments/verify` | POST | ✅ | Verify payment signature (HMAC-SHA256) |
+| `GET /payments/my-purchases` | GET | ✅ | Fetch user's transaction history |
+
+### Security Model
+
+| Layer | Implementation |
+|:---|:---|
+| **Server-side orders** | Orders are created on the backend — amount cannot be tampered |
+| **Signature verification** | HMAC-SHA256 using Razorpay secret prevents forged payments |
+| **Transaction ledger** | Every verified payment is stored in isolated `payment_db` |
+
+---
+
+## 📝 5. Posts Service — Community Engine
+
+| Route | Method | Auth | Description |
+|:---|:---:|:---:|:---|
+| `GET /posts` | GET | ❌ | List all posts (public) |
+| `POST /posts` | POST | ✅ | Create post (authenticated) |
+| `DELETE /posts/:id` | DELETE | ✅ | Delete own post (owner enforcement) |
+
+- **Owner Enforcement**: Users can only delete their own posts — the service compares `req.user.id` with the post's `authorId`
+- **Database**: Isolated PostgreSQL (`posts_db`) with Prisma ORM
+
+---
+
+## 🛡️ 6. API Gateway — Orchestration Hub
+
+```mermaid
+flowchart LR
+  subgraph "Incoming Request"
+    A["🌐 Client Request"]
+  end
+
+  subgraph "Gateway :4000"
+    B["CORS Check"] --> C["Rate Limiter"]
+    C --> D{"Route Matcher"}
+  end
+
+  D -->|"/auth/*"| E["→ :4001"]
+  D -->|"/posts/*"| F["→ :4002"]
+  D -->|"/payments/*"| G["→ :4003"]
+  D -->|"/ai/*"| H["→ :4004"]
+
+  A --> B
+
+  style D fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
+```
+
+| Feature | Implementation |
+|:---|:---|
+| **Proxy** | `http-proxy-middleware` for transparent request forwarding |
+| **CORS** | Whitelist `localhost:3000` (configurable) |
+| **Rate Limiting** | Prevents abuse on all endpoints |
+| **Health Check** | `GET /health` returns service status |
+
+---
+
+## 🔑 7. Credentials Matrix
+
+| Platform | Secrets Needed | Target `.env` File(s) | Console Link |
+|:---|:---|:---|:---:|
+| **Google AI Studio** | `GEMINI_API_KEY` | `backend/ai-service/.env` | [↗](https://aistudio.google.com/app/apikey) |
+| **Upstash** | `REST_URL`, `TOKEN` | `backend/ai-service/.env` | [↗](https://console.upstash.com/vector) |
+| **Google Cloud** | `CLIENT_ID`, `CLIENT_SECRET` | `backend/auth/.env`, `frontend/.env` | [↗](https://console.cloud.google.com/apis/credentials) |
+| **Razorpay** | `KEY_ID`, `KEY_SECRET` | `backend/payment/.env`, `frontend/.env` | [↗](https://dashboard.razorpay.com/) |
+| **Shared** | `JWT_SECRET` | All backend `.env` files | — |
+
+---
+
+## 📦 8. Shared Packages (`/shared`)
+
+| Package | Purpose |
+|:---|:---|
+| `@shared/config` | Centralized environment variable validation |
+| `@shared/logger` | Unified `pino`-based structured logging |
+| `@shared/types` | Shared TypeScript interfaces (`User`, `Post`, etc.) |
+
+---
+
+## 🎨 9. Frontend Architecture
+
+```mermaid
+flowchart TD
+  subgraph "Next.js 14 App Router"
+    A["Layout + Providers"] --> B["Navbar<br/><i>Theme Toggle</i>"]
+    A --> C["Pages"]
+    C --> D["Dashboard"]
+    C --> E["Posts"]
+    C --> F["Store"]
+    C --> G["Chat (AI)"]
+    C --> H["Profile"]
+    C --> I["Purchases"]
+  end
+
+  subgraph "State Management"
+    J["React Query<br/><i>Server State</i>"]
+    K["ThemeContext<br/><i>Dark/Light Mode</i>"]
+    L["useAuth Hook<br/><i>JWT Management</i>"]
+  end
+
+  C --> J
+  A --> K
+  C --> L
+
+  style G fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+```
+
+| Layer | Technology | Purpose |
+|:---|:---|:---|
+| **Framework** | Next.js 14 (App Router) | SSR, routing, layouts |
+| **Styling** | TailwindCSS | Utility-first CSS with dark/light theme |
+| **Data** | React Query | Server state caching & mutations |
+| **Notifications** | Sonner | Premium animated toasts |
+| **Icons** | Lucide React | Consistent icon system |
+| **Auth State** | Custom `useAuth` hook | JWT storage, login/logout, user context |
+
+---
+
+## ⚙️ 10. DevOps & CI/CD
+
+```mermaid
+flowchart LR
+  A["📝 git push main"] --> B["🔄 GitHub Actions"]
+  B --> C["Lint & Type Check"]
+  C --> D["Docker Build"]
+  D --> E["Push to GHCR"]
+  E --> F["🔁 ArgoCD Sync"]
+  F --> G["☸️ K8s Deploy"]
+
+  style F fill:#065f46,stroke:#34d399,color:#e2e8f0
+```
+
+| Stage | Tool | What Happens |
+|:---|:---|:---|
+| **CI** | GitHub Actions | Lint → Build → Docker Build → Push to `ghcr.io` |
+| **CD** | ArgoCD | Watches `/k8s` folder, auto-deploys on manifest changes |
+| **Local Dev** | `npm run run-local` | Clears ports, starts DBs, runs all services |
+| **K8s Dev** | `npm run run-k8s build` | Builds images tagged with Git SHA, deploys locally |
+
+---
+
+## 💡 11. Pro Tips
+
+| Tip | Command / Action |
+|:---|:---|
+| Add a new DB field | Edit `schema.prisma` → `npm run db:push` in that service |
+| Tune AI context | Adjust `topK` in the AI controller for more/fewer RAG results |
+| Debug a service | Logs are prefixed with service name (via Turborepo) |
+| Reset databases | `docker compose -f docker/docker-compose.yml down -v` |
+| Check all health | `curl localhost:400{0,1,2,3}/health` |
