@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api', aiRoutes);
+app.use(aiRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {
