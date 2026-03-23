@@ -20,7 +20,7 @@ COPY tsconfig.base.json ./
 RUN npm run build --workspace=@shared/types
 RUN npm run build --workspace=@shared/logger
 RUN npm run build --workspace=@shared/config
-RUN cd backend/posts && npx prisma generate
+RUN npm run db:generate --workspace=@backend/posts
 RUN npm run build --workspace=@backend/posts
 # Override shared package entry points for production
 RUN for pkg in shared/*/package.json; do sed -i 's|./src/index.ts|./dist/index.js|g' "$pkg"; done

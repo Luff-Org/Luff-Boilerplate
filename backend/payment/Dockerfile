@@ -20,7 +20,7 @@ COPY tsconfig.base.json ./
 RUN npm run build --workspace=@shared/types
 RUN npm run build --workspace=@shared/logger
 RUN npm run build --workspace=@shared/config
-RUN npx prisma generate --schema=backend/payment/prisma/schema.prisma
+RUN npm run db:generate --workspace=@backend/payment
 RUN npm run build --workspace=@backend/payment
 RUN for pkg in shared/*/package.json; do sed -i 's|./src/index.ts|./dist/index.js|g' "$pkg"; done
 

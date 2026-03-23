@@ -97,18 +97,19 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
     }
 
     // Concise system prompt
+    const now = new Date().toLocaleString();
     const systemPrompt = mode === 'rag' 
-      ? `Be concise. Use context to answer. No context? Say so.\n\nContext:\n${context}`
-      : 'Be concise.';
+      ? `Current time: ${now}.\nBe concise. Use context to answer. No context? Say so.\n\nContext:\n${context}`
+      : `Current time: ${now}.\nBe concise.`;
 
-    const MAX_RESPONSE_TOKENS = 150; // Strict output limit
+    const MAX_RESPONSE_TOKENS = 500;
 
     // --- PRIORITY 1: Gemini ---
     if (genAI) {
       try {
         log.info('Attempting Gemini completion (Primary)');
         const model = genAI.getGenerativeModel({ 
-          model: 'gemini-1.5-flash',
+          model: 'gemini-flash-latest',
           generationConfig: { maxOutputTokens: MAX_RESPONSE_TOKENS } 
         });
         const combinedPrompt = `${systemPrompt}\n\nUser: ${message}`;

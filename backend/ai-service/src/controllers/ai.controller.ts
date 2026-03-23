@@ -37,8 +37,9 @@ export async function handleUpload(req: AuthRequest, res: Response): Promise<voi
 
     await aiService.processPdf(req.file.buffer, req.userId!);
     res.json({ success: true, message: 'PDF processed and indexed' });
-  } catch (error) {
-    log.error({ error }, 'Upload controller failed');
-    res.status(500).json({ success: false, error: 'Internal server error' });
+  } catch (error: any) {
+    console.error('❌ Upload Controller Error:', error);
+    log.error({ error: error.message || error }, 'Upload controller failed');
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 }
