@@ -108,8 +108,10 @@ Handles everything: clears port conflicts, starts Docker DBs, launches all servi
 
 ### Option B: Kubernetes Mode (Production)
 
-```
-  Build Images → Tag (Git SHA) → ArgoCD Detects → K8s Deploys → Port Forward
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+flowchart LR
+  A[Build] --> B[Tag] --> C[ArgoCD] --> D[Deploy] --> E[Forward]
 ```
 
 ```bash
@@ -164,8 +166,10 @@ kubectl create secret generic ai-secrets \
 
 ## 🤖 5. CI/CD Pipeline
 
-```
-  git push main → GitHub Actions → Lint → Build → Docker → GHCR → ArgoCD → K8s
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+flowchart LR
+  Push --> CI[Actions] --> Lint --> Build --> Reg[GHCR] --> Argo[ArgoCD] --> K8s
 ```
 
 > **⚠️ Important**: Add `GOOGLE_CLIENT_ID` to GitHub Repository Secrets. Next.js `NEXT_PUBLIC_` variables are baked into the Docker image at build time.

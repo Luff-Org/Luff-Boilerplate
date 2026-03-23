@@ -28,8 +28,10 @@ node -v && npm -v && docker -v && git --version
 
 ## 🛠️ Step-by-Step Setup
 
-```
-  Clone → Install → Env Setup → Docker DBs → Prisma → Launch 🚀
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+flowchart LR
+  A[Clone] --> B[Install] --> C[Env] --> D[Docker] --> E[Prisma] --> F[Launch]
 ```
 
 ---
@@ -224,14 +226,14 @@ curl http://localhost:4003/health   # Payment
 
 ## 🗺️ Full Service Map
 
-```
-  Frontend (:3000)
-      │
-  Gateway (:4000)
-      ├── Auth (:4001)    → AuthDB (:5433)
-      ├── Posts (:4002)   → PostsDB (:5434)
-      ├── Payment (:4003) → PayDB (:5435)
-      └── AI (:4004)      → Upstash Vector → Gemini 2.5
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+graph TB
+  FE[Frontend] --> GW[Gateway]
+  GW --> A[Auth] --> AD[(AuthDB)]
+  GW --> P[Posts] --> PD[(PostsDB)]
+  GW --> Pa[Pay] --> PaD[(PayDB)]
+  GW --> AI[AI] --> V[(Vector)]
 ```
 
 ---

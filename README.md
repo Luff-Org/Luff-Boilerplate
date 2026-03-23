@@ -23,29 +23,19 @@
 
 ## 🧬 Architecture at a Glance
 
-```
-                         ┌───────────────────────────┐
-                         │   Frontend (Next.js :3000) │
-                         └─────────────┬─────────────┘
-                                       │
-                         ┌─────────────▼─────────────┐
-                         │   API Gateway (:4000)      │
-                         │   CORS · Rate Limiting     │
-                         └──┬──────┬──────┬──────┬───┘
-                            │      │      │      │
-                  ┌─────────▼┐ ┌───▼───┐ ┌▼──────┐ ┌▼────────┐
-                  │Auth :4001│ │Posts   │ │Payment│ │AI :4004 │
-                  │Google JWT│ │:4002  │ │:4003  │ │Gemini   │
-                  └────┬─────┘ └──┬────┘ └──┬────┘ └──┬──┬───┘
-                       │          │         │         │  │
-                  ┌────▼───┐ ┌────▼──┐ ┌────▼──┐ ┌────▼┐ │
-                  │Auth DB │ │PostsDB│ │Pay DB │ │Vec- │ │
-                  │:5433   │ │:5434  │ │:5435  │ │tor  │ │
-                  └────────┘ └───────┘ └───────┘ └─────┘ │
-                                                    ┌────▼────┐
-                                                    │ Gemini  │
-                                                    │ 2.5 API │
-                                                    └─────────┘
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+graph LR
+  FE[Frontend] -->|API| GW[Gateway]
+  GW --> A[Auth]
+  GW --> P[Posts]
+  GW --> Pay[Pay]
+  GW --> AI[AI]
+  A --> AD[(AuthDB)]
+  P --> PD[(PostsDB)]
+  Pay --> PaD[(PayDB)]
+  AI --> V[(Vector)]
+  AI --> G[Gemini]
 ```
 
 ---
@@ -67,17 +57,18 @@
 
 The AI domain is the heartbeat of LUFF. — providing production-ready intelligence out of the box.
 
-```
-  ┌──────────────────────────────────────────────────────┐
-  │                   INGESTION                          │
-  │  Upload PDF → Parse → Chunk → Embed → Store (Vector)│
-  └──────────────────────────────────┬───────────────────┘
-                                     │
-  ┌──────────────────────────────────▼───────────────────┐
-  │                   QUERY                              │
-  │  User Question → Semantic Search → Build Context     │
-  │                  → Gemini 2.5 Flash → AI Answer      │
-  └──────────────────────────────────────────────────────┘
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+flowchart TD
+  A[Upload] --> B[Parse]
+  B --> C[Chunk]
+  C --> D[Embed]
+  D --> E[Store]
+  F[Query] --> G[Search]
+  E --> G
+  G --> H[Context]
+  H --> I[Gemini]
+  I --> J[Answer]
 ```
 
 | Feature | Details |
@@ -95,27 +86,28 @@ The AI domain is the heartbeat of LUFF. — providing production-ready intellige
 <summary><b>🔍 Click to expand Payment Architecture</b></summary>
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
-  participant U as 🖥️ User
+  participant U as User
   participant F as Frontend
   participant G as Gateway
-  participant P as Payment Service
-  participant R as Razorpay API
-  participant DB as Payment DB
+  participant P as Payment
+  participant R as Razorpay
+  participant DB as PayDB
 
-  U->>F: Click "Buy Now"
-  F->>G: POST /payments/create-order
-  G->>P: Forward Request
-  P->>R: Create Razorpay Order
+  U->>F: Buy
+  F->>G: POST /create-order
+  G->>P: Forward
+  P->>R: Create Order
   R-->>P: order_id
-  P-->>F: Return order_id
-  F->>R: Open Razorpay Checkout
-  R-->>F: Payment Success Callback
-  F->>G: POST /payments/verify
-  G->>P: Forward Verification
-  P->>P: HMAC Signature Check
-  P->>DB: Store Transaction ✅
-  P-->>F: Payment Verified
+  P-->>F: order_id
+  F->>R: Checkout
+  R-->>F: Callback
+  F->>G: POST /verify
+  G->>P: Forward
+  P->>P: HMAC Check
+  P->>DB: Save
+  P-->>F: Verified
 ```
 
 | Route | Method | Auth | Description |
@@ -134,23 +126,24 @@ sequenceDiagram
 <summary><b>🔍 Click to expand Authentication Flow</b></summary>
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
-  participant U as 🖥️ User
+  participant U as User
   participant F as Frontend
-  participant G as Google OAuth
-  participant A as Auth Service
-  participant DB as Auth DB
+  participant G as Google
+  participant A as Auth
+  participant DB as AuthDB
 
-  U->>F: Click "Login with Google"
+  U->>F: Login
   F->>G: OAuth Popup
-  G-->>F: Google Credential Token
-  F->>A: POST /auth/google (credential)
-  A->>G: Verify Token with Google
-  G-->>A: User Profile
-  A->>DB: Upsert User
-  A->>A: Sign JWT (userId, email)
-  A-->>F: { token, user }
-  F->>F: Store JWT in localStorage
+  G-->>F: Token
+  F->>A: POST /auth/google
+  A->>G: Verify
+  G-->>A: Profile
+  A->>DB: Upsert
+  A->>A: Sign JWT
+  A-->>F: JWT + User
+  F->>F: Store JWT
 ```
 
 | Route | Method | Auth | Description |

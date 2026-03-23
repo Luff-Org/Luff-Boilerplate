@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" />
 </p>
 
-> **Scaffold the entire LUFF. microservices ecosystem in one command.**  
+> **Scaffold the entire LUFF. microservices ecosystem in one command.**
 > Full-stack Next.js + Express + Prisma + Gemini AI + Razorpay — ready to run.
 
 ---
@@ -85,12 +85,16 @@ During scaffolding, the CLI asks:
 
 ### AI Architecture
 
-```
-  Upload PDF → Parse → Embed (768-dim) → Store (Upstash Vector)
-                                                  │
-  Ask Question → Semantic Search ←────────────────┘
-                      │
-                 Gemini 2.5 Flash → Grounded Answer
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+flowchart LR
+  A[Upload] --> B[Parse]
+  B --> C[Embed]
+  C --> D[Store]
+  E[Query] --> F[Search]
+  D -.-> F
+  F --> G[Gemini]
+  G --> H[Answer]
 ```
 
 ---
