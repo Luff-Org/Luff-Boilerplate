@@ -110,12 +110,10 @@ Handles everything: clears port conflicts, starts Docker DBs, launches all servi
 
 ```mermaid
 flowchart LR
-  A["Build Images"] --> B["Tag with Git SHA"]
-  B --> C["ArgoCD Detects"]
-  C --> D["K8s Deploys"]
-  D --> E["Port Forward"]
-
-  style C fill:#065f46,stroke:#34d399,color:#e2e8f0
+  A[Build] --> B[Tag]
+  B --> C[ArgoCD]
+  C --> D[Deploy]
+  D --> E[Forward]
 ```
 
 ```bash
@@ -171,15 +169,13 @@ kubectl create secret generic ai-secrets \
 ## 🤖 5. CI/CD Pipeline
 
 ```mermaid
-flowchart TD
-  A["📝 Push to main"] --> B["GitHub Actions"]
-  B --> C["ESLint + TypeScript"]
-  C --> D["Build Docker Images"]
-  D --> E["Push to ghcr.io"]
-  E --> F["ArgoCD Sync"]
-  F --> G["K8s Rolling Update"]
-
-  style F fill:#065f46,stroke:#34d399,color:#e2e8f0
+flowchart LR
+  Push --> CI[Actions]
+  CI --> Lint
+  Lint --> Build
+  Build --> GHCR
+  GHCR --> Argo[ArgoCD]
+  Argo --> K8s
 ```
 
 > **⚠️ Important**: Add `GOOGLE_CLIENT_ID` to GitHub Repository Secrets. Next.js `NEXT_PUBLIC_` variables are baked into the Docker image at build time.

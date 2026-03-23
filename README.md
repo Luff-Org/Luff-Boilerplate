@@ -25,16 +25,16 @@
 
 ```mermaid
 graph LR
-  A["Next.js :3000"] -->|API| B["Gateway :4000"]
-  B --> C["Auth :4001"]
-  B --> D["Posts :4002"]
-  B --> E["Payment :4003"]
-  B --> F["AI :4004"]
-  C --> G[(Auth DB)]
-  D --> H[(Posts DB)]
-  E --> I[(Payment DB)]
-  F --> J[(Upstash Vector)]
-  F --> K["Gemini 2.5"]
+  FE[Frontend] --> GW[Gateway]
+  GW --> A[Auth]
+  GW --> P[Posts]
+  GW --> Pay[Payment]
+  GW --> AI[AI]
+  A --> ADB[(AuthDB)]
+  P --> PDB[(PostsDB)]
+  Pay --> PayDB[(PayDB)]
+  AI --> UV[(Vector)]
+  AI --> GM[Gemini]
 ```
 
 ---
@@ -58,15 +58,15 @@ The AI domain is the heartbeat of LUFF. — providing production-ready intellige
 
 ```mermaid
 flowchart TD
-  A[Upload PDF] --> B[Parse Text]
-  B --> C[Chunk Text]
-  C --> D[Create Embeddings]
-  D --> E[Store in Upstash]
-  F[Ask Question] --> G[Semantic Search]
+  A[Upload] --> B[Parse]
+  B --> C[Chunk]
+  C --> D[Embed]
+  D --> E[Store]
+  F[Query] --> G[Search]
   E --> G
-  G --> H[Build Context]
-  H --> I[Gemini 2.5 Flash]
-  I --> J[AI Response]
+  G --> H[Context]
+  H --> I[Gemini]
+  I --> J[Answer]
 ```
 
 | Feature | Details |

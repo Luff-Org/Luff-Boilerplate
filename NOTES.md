@@ -14,32 +14,17 @@
 
 ```mermaid
 graph TB
-  subgraph "Client Layer"
-    U["👤 User"] --> FE["🖥️ Next.js 14 Frontend<br/><i>:3000 • React Query • Tailwind</i>"]
-  end
-
-  subgraph "Orchestration Layer"
-    FE -->|"All API traffic"| GW["🛡️ API Gateway<br/><i>:4000 • CORS • Rate Limit</i>"]
-  end
-
-  subgraph "Domain Services"
-    GW -->|"/auth/*"| AUTH["🔐 Auth Service<br/><i>:4001</i>"]
-    GW -->|"/posts/*"| POSTS["📝 Posts Service<br/><i>:4002</i>"]
-    GW -->|"/payments/*"| PAY["💳 Payment Service<br/><i>:4003</i>"]
-    GW -->|"/ai/*"| AI["🧠 AI Service<br/><i>:4004</i>"]
-  end
-
-  subgraph "Data Layer"
-    AUTH --> DB1[("🗄️ auth_db<br/>:5433")]
-    POSTS --> DB2[("🗄️ posts_db<br/>:5434")]
-    PAY --> DB3[("🗄️ payment_db<br/>:5435")]
-    AI --> VS["🔮 Upstash Vector"]
-    AI --> GM["✨ Gemini 2.5 Flash"]
-  end
-
-  style AI fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
-  style GM fill:#7c3aed,stroke:#a78bfa,color:#e2e8f0
-  style GW fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
+  U[User] --> FE[Frontend]
+  FE --> GW[Gateway]
+  GW --> A[Auth]
+  GW --> P[Posts]
+  GW --> Pay[Payment]
+  GW --> AI[AI]
+  A --> ADB[(AuthDB)]
+  P --> PDB[(PostsDB)]
+  Pay --> PayDB[(PayDB)]
+  AI --> UV[(Vector)]
+  AI --> GM[Gemini]
 ```
 
 ### Key Principles
@@ -61,23 +46,15 @@ The AI domain is the most architecturally significant service — providing prod
 
 ```mermaid
 flowchart LR
-  subgraph "Ingestion Pipeline"
-    A["📄 PDF Upload"] --> B["📦 pdfjs-dist<br/><i>Text Extraction</i>"]
-    B --> C["✂️ Recursive<br/>Text Splitter"]
-    C --> D["🔢 768-dim<br/>Embeddings"]
-    D --> E["☁️ Upstash<br/>Vector Store"]
-  end
-
-  subgraph "Query Pipeline"
-    F["💬 User Question"] --> G["🔍 Semantic<br/>Search"]
-    E -.->|"Top-K Results"| G
-    G --> H["📋 Context<br/>Assembly"]
-    H --> I["✨ Gemini 2.5<br/>Flash"]
-    I --> J["💬 Grounded<br/>Response"]
-  end
-
-  style I fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
-  style E fill:#065f46,stroke:#34d399,color:#e2e8f0
+  A[Upload] --> B[Parse]
+  B --> C[Split]
+  C --> D[Embed]
+  D --> E[Store]
+  F[Query] --> G[Search]
+  E -.-> G
+  G --> H[Context]
+  H --> I[Gemini]
+  I --> J[Answer]
 ```
 
 ### AI Capabilities
@@ -102,46 +79,32 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant U as 👤 User
-  participant F as 🖥️ Frontend
-  participant G as 🔑 Google OAuth
-  participant A as 🔐 Auth Service
-  participant DB as 🗄️ Auth DB
+  participant U as User
+  participant F as Frontend
+  participant G as Google
+  participant A as Auth
+  participant DB as AuthDB
 
-  rect rgb(30, 27, 75)
-    Note over U,DB: Login Flow
-    U->>F: Click "Login with Google"
-    F->>G: Open OAuth Popup
-    G-->>F: credential (ID Token)
-    F->>A: POST /auth/google
-    A->>G: Verify token with Google servers
-    G-->>A: { email, name, picture }
-    A->>DB: Upsert user record
-    A->>A: Sign JWT { userId, email }
-    A-->>F: { token, user }
-    F->>F: Store JWT in localStorage
-  end
-
-  rect rgb(6, 95, 70)
-    Note over U,DB: Authenticated Request
-    U->>F: Navigate to protected page
-    F->>A: GET /auth/me (Bearer token)
-    A->>A: Verify JWT signature
-    A->>DB: Fetch user by ID
-    A-->>F: { user profile }
-  end
+  U->>F: Login
+  F->>G: OAuth Popup
+  G-->>F: Token
+  F->>A: POST /auth/google
+  A->>G: Verify
+  G-->>A: Profile
+  A->>DB: Upsert
+  A->>A: Sign JWT
+  A-->>F: JWT + User
+  F->>F: Store JWT
 ```
 
 ### How JWT Flows Across Services
 
 ```mermaid
 flowchart LR
-  A["🖥️ Frontend<br/><i>Attaches JWT</i>"] --> B["🛡️ Gateway<br/><i>Passes through</i>"]
-  B --> C["🔐 Auth Middleware<br/><i>In every service</i>"]
-  C -->|"Valid"| D["✅ req.user attached"]
-  C -->|"Invalid"| E["❌ 401 Unauthorized"]
-
-  style C fill:#92400e,stroke:#f59e0b,color:#e2e8f0
+  A[Frontend] --> B[Gateway]
+  B --> C[Middleware]
+  C -->|Valid| D[OK]
+  C -->|Invalid| E[401]
 ```
 
 > Every backend service shares the same `JWT_SECRET` and runs identical middleware. The Gateway does **not** validate tokens — each service handles its own auth.
@@ -159,29 +122,23 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant U as 👤 User
-  participant F as 🖥️ Frontend
-  participant P as 💳 Payment Service
-  participant R as 🏦 Razorpay API
-  participant DB as 🗄️ Payment DB
+  participant U as User
+  participant F as Frontend
+  participant P as Payment
+  participant R as Razorpay
+  participant DB as PayDB
 
-  rect rgb(59, 31, 43)
-    Note over U,DB: Purchase Flow
-    U->>F: Click "Buy" on Store page
-    F->>P: POST /payments/create-order { amount }
-    P->>R: razorpay.orders.create()
-    R-->>P: { order_id, amount, currency }
-    P-->>F: Return order details
-
-    F->>R: Open Razorpay Checkout Modal
-    U->>R: Enter card / UPI details
-    R-->>F: { razorpay_payment_id, razorpay_signature }
-
-    F->>P: POST /payments/verify
-    P->>P: HMAC-SHA256 signature verification
-    P->>DB: INSERT transaction record ✅
-    P-->>F: { success: true }
-  end
+  U->>F: Buy
+  F->>P: Create Order
+  P->>R: Create
+  R-->>P: order_id
+  P-->>F: order_id
+  F->>R: Checkout
+  R-->>F: Callback
+  F->>P: Verify
+  P->>P: HMAC Check
+  P->>DB: Save
+  P-->>F: Success
 ```
 
 ### Payment Routes
@@ -219,23 +176,13 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  subgraph "Incoming Request"
-    A["🌐 Client Request"]
-  end
-
-  subgraph "Gateway :4000"
-    B["CORS Check"] --> C["Rate Limiter"]
-    C --> D{"Route Matcher"}
-  end
-
-  D -->|"/auth/*"| E["→ :4001"]
-  D -->|"/posts/*"| F["→ :4002"]
-  D -->|"/payments/*"| G["→ :4003"]
-  D -->|"/ai/*"| H["→ :4004"]
-
-  A --> B
-
-  style D fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
+  Req[Request] --> CORS
+  CORS --> Rate[Limiter]
+  Rate --> R{Router}
+  R --> A[Auth]
+  R --> P[Posts]
+  R --> Pay[Payment]
+  R --> AI[AI]
 ```
 
 | Feature | Implementation |
@@ -273,28 +220,14 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  subgraph "Next.js 14 App Router"
-    A["Layout + Providers"] --> B["Navbar<br/><i>Theme Toggle</i>"]
-    A --> C["Pages"]
-    C --> D["Dashboard"]
-    C --> E["Posts"]
-    C --> F["Store"]
-    C --> G["Chat (AI)"]
-    C --> H["Profile"]
-    C --> I["Purchases"]
-  end
-
-  subgraph "State Management"
-    J["React Query<br/><i>Server State</i>"]
-    K["ThemeContext<br/><i>Dark/Light Mode</i>"]
-    L["useAuth Hook<br/><i>JWT Management</i>"]
-  end
-
-  C --> J
-  A --> K
-  C --> L
-
-  style G fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  L[Layout] --> Nav[Navbar]
+  L --> Pages
+  Pages --> Dash[Dashboard]
+  Pages --> Posts
+  Pages --> Store
+  Pages --> Chat[AI Chat]
+  Pages --> Profile
+  Pages --> Purchases
 ```
 
 | Layer | Technology | Purpose |
@@ -312,14 +245,12 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  A["📝 git push main"] --> B["🔄 GitHub Actions"]
-  B --> C["Lint & Type Check"]
-  C --> D["Docker Build"]
-  D --> E["Push to GHCR"]
-  E --> F["🔁 ArgoCD Sync"]
-  F --> G["☸️ K8s Deploy"]
-
-  style F fill:#065f46,stroke:#34d399,color:#e2e8f0
+  Push[Push] --> CI[Actions]
+  CI --> Lint
+  Lint --> Build
+  Build --> GHCR[Registry]
+  GHCR --> Argo[ArgoCD]
+  Argo --> K8s[Deploy]
 ```
 
 | Stage | Tool | What Happens |

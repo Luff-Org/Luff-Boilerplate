@@ -87,15 +87,13 @@ During scaffolding, the CLI asks:
 
 ```mermaid
 flowchart LR
-  A["📄 Upload PDF"] --> B["Parse & Chunk"]
-  B --> C["768-dim Embeddings"]
-  C --> D["Upstash Vector Store"]
-  E["💬 Ask Question"] --> F["Semantic Search"]
+  A[Upload] --> B[Parse]
+  B --> C[Embed]
+  C --> D[Store]
+  E[Query] --> F[Search]
   D -.-> F
-  F --> G["Gemini 2.5 Flash"]
-  G --> H["💬 Grounded Answer"]
-
-  style G fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  F --> G[Gemini]
+  G --> H[Answer]
 ```
 
 ---

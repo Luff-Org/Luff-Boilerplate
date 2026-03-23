@@ -231,35 +231,15 @@ curl http://localhost:4003/health   # Payment
 
 ```mermaid
 graph TB
-  subgraph "Frontend :3000"
-    FE["🖥️ Next.js 14"]
-  end
-
-  subgraph "Gateway :4000"
-    GW["🛡️ API Gateway"]
-  end
-
-  subgraph "Services"
-    AUTH["🔐 Auth :4001"]
-    POST["📝 Posts :4002"]
-    PAY["💳 Payment :4003"]
-    AI["🧠 AI :4004"]
-  end
-
-  subgraph "Databases"
-    DB1[("Auth DB :5433")]
-    DB2[("Posts DB :5434")]
-    DB3[("Payment DB :5435")]
-    VS["🔮 Upstash Vector"]
-  end
-
-  FE --> GW
-  GW --> AUTH --> DB1
-  GW --> POST --> DB2
-  GW --> PAY --> DB3
-  GW --> AI --> VS
-
-  style AI fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  FE[Frontend] --> GW[Gateway]
+  GW --> A[Auth]
+  GW --> P[Posts]
+  GW --> Pay[Payment]
+  GW --> AI[AI]
+  A --> ADB[(AuthDB)]
+  P --> PDB[(PostsDB)]
+  Pay --> PayDB[(PayDB)]
+  AI --> UV[(Vector)]
 ```
 
 ---
