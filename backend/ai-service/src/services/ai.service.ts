@@ -99,8 +99,8 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
     });
 
     return response.choices[0].message.content || 'I could not generate a response.';
-  } catch (error) {
-    log.error({ error }, 'Chat failed');
-    throw new Error('AI Chat failed');
+  } catch (error: any) {
+    log.error({ error: error.message || error }, 'Chat failed');
+    throw new Error(error.message || 'AI Chat failed');
   }
 }
