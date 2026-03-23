@@ -25,8 +25,9 @@ export async function processPdf(fileBuffer: Buffer, userId: string): Promise<vo
   try {
     log.info({ userId }, 'Starting PDF processing');
 
-    // Dynamically import pdfjs (ESM only)
-    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    // Dynamically import pdfjs (ESM only) - using legacy build for better Node.js compatibility
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const { getDocument } = pdfjs;
     const uint8Array = new Uint8Array(fileBuffer);
     const loadingTask = getDocument({ data: uint8Array });
     const pdfDoc = await loadingTask.promise;
