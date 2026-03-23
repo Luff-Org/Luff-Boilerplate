@@ -4,7 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import './globals.css';
 import { Providers } from './providers';
-import { Navbar } from '@/components/Navbar';
+import { ClientLayout } from '@/components/ClientLayout';
 
 export const metadata: Metadata = {
   title: 'Microservices Boilerplate',
@@ -16,11 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-50 antialiased">
+      <body className="antialiased font-sans">
         <GoogleOAuthProvider clientId={clientId}>
           <Providers>
-            <Navbar />
-            <main>{children}</main>
+            <ClientLayout>{children}</ClientLayout>
           </Providers>
         </GoogleOAuthProvider>
       </body>

@@ -2,6 +2,7 @@
 
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/context/ThemeContext';
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateProfile } from '@/lib/api';
@@ -9,6 +10,7 @@ import { toast } from 'sonner';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user?.name || '');
@@ -32,20 +34,20 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="max-w-2xl mx-auto py-12 px-6">
-        <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-gradient-x" />
-          <div className="px-10 pb-10">
+      <div className={`min-h-screen transition-all duration-500 py-16 px-6 ${isDark ? 'bg-[#0F1115] text-gray-200' : 'bg-[#FDFBF7] text-stone-900'}`}>
+        <div className={`max-w-2xl mx-auto rounded-[2.5rem] border overflow-hidden shadow-sm transition-all duration-500 ${isDark ? 'bg-[#17191E] border-gray-800' : 'bg-white border-gray-100'}`}>
+          <div className="h-40 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 animate-gradient-x" />
+          <div className="px-10 pb-12">
             <div className="relative flex justify-between items-end -mt-12 mb-10">
-              <div className="p-1.5 bg-white rounded-full shadow-2xl">
+              <div className={`p-1.5 rounded-full shadow-xl transition-colors ${isDark ? 'bg-[#17191E]' : 'bg-white'}`}>
                 {user?.picture ? (
                   <img
                     src={user.picture}
                     alt={user.name}
-                    className="w-24 h-24 rounded-full border-2 border-gray-50"
+                    className={`w-28 h-28 rounded-full border-4 ${isDark ? 'border-gray-800' : 'border-gray-50'}`}
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-3xl font-bold border-2 border-gray-50">
+                  <div className={`w-28 h-28 rounded-full flex items-center justify-center text-4xl font-black border-4 ${isDark ? 'bg-gray-800 text-indigo-400 border-gray-700' : 'bg-indigo-100 text-indigo-700 border-gray-50'}`}>
                     {user?.name?.charAt(0)}
                   </div>
                 )}
@@ -57,22 +59,22 @@ export default function ProfilePage() {
                     setIsEditing(true);
                     setNewName(user?.name || '');
                   }}
-                  className="bg-gray-900 text-white px-6 py-2.5 rounded-2xl text-sm font-bold hover:bg-gray-800 transition-all transform active:scale-95 shadow-lg shadow-gray-200 mb-2"
+                  className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all transform hover:scale-105 active:scale-95 shadow-lg ${isDark ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
                 >
                   Edit Profile
                 </button>
               ) : (
-                <div className="flex gap-2 mb-2">
+                <div className="flex gap-3 mb-1">
                   <button
                     onClick={() => setIsEditing(false)}
-                    className="bg-white text-gray-600 px-6 py-2.5 rounded-2xl text-sm font-bold border border-gray-200 hover:bg-gray-50 transition-all transform active:scale-95"
+                    className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all transform hover:scale-105 active:scale-95 ${isDark ? 'bg-transparent border-gray-800 text-gray-400 hover:bg-white/5' : 'bg-white border-stone-100 text-stone-500 hover:bg-stone-50'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={update.isPending}
-                    className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl text-sm font-bold hover:bg-indigo-700 transition-all transform active:scale-95 shadow-lg shadow-indigo-100 disabled:opacity-50"
+                    className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-indigo-600/10 disabled:opacity-50"
                   >
                     {update.isPending ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -80,47 +82,47 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <div className="space-y-8">
-              <div>
+            <div className="space-y-10">
+              <div className="space-y-1">
                 {isEditing ? (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  <div className="space-y-3">
+                    <label className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-gray-600' : 'text-stone-400'}`}>
                       Display Name
                     </label>
                     <input
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="w-full text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className={`w-full text-2xl font-black rounded-xl px-5 py-3 transition-all focus:outline-none focus:ring-4 ${isDark ? 'bg-black/30 border-gray-800 text-white focus:ring-indigo-500/20' : 'bg-stone-50 border-stone-100 text-gray-900 focus:ring-indigo-500/5'}`}
                       autoFocus
                     />
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                    <h1 className={`text-3xl font-black tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {user?.name}
                     </h1>
-                    <p className="text-lg text-gray-500 font-medium">{user?.email}</p>
+                    <p className={`text-sm font-bold opacity-60 ${isDark ? 'text-gray-500' : 'text-stone-500'}`}>{user?.email}</p>
                   </>
                 )}
               </div>
 
               <div className="pt-2">
-                <div className="h-px bg-gray-100 w-full mb-8" />
+                <div className={`h-px w-full mb-8 transition-colors ${isDark ? 'bg-gray-800' : 'bg-stone-50'}`} />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-50">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                      User ID
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className={`p-6 rounded-2xl border transition-colors ${isDark ? 'bg-black/20 border-gray-800' : 'bg-gray-50/50 border-stone-50'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-gray-600' : 'text-stone-400'}`}>
+                      Universal ID
                     </span>
-                    <span className="text-sm font-mono text-gray-600 break-all">{user?.id}</span>
+                    <span className={`text-xs font-mono font-bold break-all ${isDark ? 'text-gray-500' : 'text-stone-500'}`}>{user?.id}</span>
                   </div>
-                  <div className="bg-gray-50/50 p-6 rounded-3xl border border-gray-50">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">
-                      Login Provider
+                  <div className={`p-6 rounded-2xl border transition-colors ${isDark ? 'bg-black/20 border-gray-800' : 'bg-gray-50/50 border-stone-50'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest block mb-1 ${isDark ? 'text-gray-600' : 'text-stone-400'}`}>
+                      Provider
                     </span>
-                    <span className="text-sm font-bold text-indigo-700 flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] animate-pulse" />
-                      Google OAuth 2.0
+                    <span className="text-[10px] font-black text-indigo-500 flex items-center gap-2 uppercase tracking-widest">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-lg animate-pulse" />
+                      Google Auth 2.0
                     </span>
                   </div>
                 </div>

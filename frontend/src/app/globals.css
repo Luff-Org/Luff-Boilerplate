@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply transition-colors duration-500;
+  }
+  
+  html.dark body {
+    @apply bg-[#0F1115] text-gray-200;
+  }
+
+  html:not(.dark) body {
+    @apply bg-[#FDFBF7] text-stone-900;
+  }
+}

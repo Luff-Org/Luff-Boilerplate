@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Script from 'next/script';
 import { createPaymentOrder, verifyPayment } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -36,6 +37,7 @@ const products = [
 
 export default function StorePage() {
   const { user, isAuthenticated } = useAuth();
+  const { isDark } = useTheme();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -67,6 +69,7 @@ export default function StorePage() {
 
             if (verification.success) {
               toast.success('Payment Successful!');
+              router.push('/purchases');
             } else {
               toast.error('Payment Verification Failed!');
             }
@@ -95,48 +98,50 @@ export default function StorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 py-12 px-6">
+    <div className={`min-h-screen transition-colors duration-500 py-16 px-6 ${isDark ? 'bg-[#0F1115] text-gray-200' : 'bg-[#FDFBF7] text-stone-900'}`}>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-            Premium Marketplace
+        <div className="text-center mb-16 space-y-4">
+          <h1 className={`text-3xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Premium Marketplace<span className="text-indigo-600">.</span>
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className={`text-sm font-bold max-w-xl mx-auto opacity-70 ${isDark ? 'text-gray-400' : 'text-stone-600'}`}>
             Upgrade your experience with our premium selection of tools and services.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
             <div
               key={product.id}
-              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+              className={`group rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border flex flex-col ${isDark ? 'bg-[#17191E] border-gray-800' : 'bg-white border-stone-100'}`}
             >
-              <div className="relative h-48 overflow-hidden">
+              <div className="relative h-56 overflow-hidden">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold text-indigo-600">
+                <div className={`absolute top-4 right-4 backdrop-blur-3xl px-4 py-1.5 rounded-full text-xs font-black shadow-lg ${isDark ? 'bg-black/60 text-indigo-400 border border-white/5' : 'bg-white/90 text-indigo-600 border border-stone-50'}`}>
                   ₹{product.price}
                 </div>
               </div>
 
-              <div className="p-6 flex-grow flex flex-col">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-6 flex-grow">{product.description}</p>
+              <div className="p-8 flex-grow flex flex-col">
+                <h3 className={`text-lg font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{product.name}</h3>
+                <p className={`text-sm font-bold mb-6 flex-grow leading-relaxed ${isDark ? 'text-gray-400' : 'text-stone-500'}`}>
+                  {product.description}
+                </p>
 
                 <button
                   onClick={() => handleBuy(product)}
                   disabled={loading === product.id}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-white transition-all transform active:scale-95 ${
+                  className={`w-full py-3 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all transform active:scale-95 shadow-lg ${
                     loading === product.id
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200'
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-500'
                   }`}
                 >
                   {loading === product.id ? 'Processing...' : 'Buy Now'}
@@ -146,9 +151,9 @@ export default function StorePage() {
           ))}
         </div>
 
-        <div className="mt-20 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-100 shadow-sm text-sm text-gray-500">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <div className="mt-24 text-center">
+          <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full border shadow-sm text-[10px] font-black uppercase tracking-widest transition-colors ${isDark ? 'bg-black/20 border-gray-800 text-gray-600' : 'bg-white border-stone-100 text-stone-400'}`}>
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50" />
             Secure payments via Razorpay
           </div>
         </div>
