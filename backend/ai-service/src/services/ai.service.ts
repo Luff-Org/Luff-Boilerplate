@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { Index } from '@upstash/vector';
-import pdf from 'pdf-parse';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env';
 import { createLogger } from '@shared/logger';
@@ -8,9 +7,11 @@ import { createLogger } from '@shared/logger';
 const log = createLogger('ai-service');
 
 // Initialize OpenAI (if key is present)
-const openai = env.OPENAI_API_KEY ? new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
-}) : null;
+const openai = env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: env.OPENAI_API_KEY,
+    })
+  : null;
 
 // Initialize Gemini (if key is present)
 const genAI = env.GEMINI_API_KEY ? new GoogleGenerativeAI(env.GEMINI_API_KEY) : null;
@@ -23,8 +24,20 @@ const vectorIndex = new Index({
 export async function processPdf(fileBuffer: Buffer, userId: string): Promise<void> {
   try {
     log.info({ userId }, 'Starting PDF processing');
-    const data = await pdf(fileBuffer);
-    const text = data.text;
+
+    // Dynamically import pdfjs (ESM only)
+    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const uint8Array = new Uint8Array(fileBuffer);
+    const loadingTask = getDocument({ data: uint8Array });
+    const pdfDoc = await loadingTask.promise;
+
+    let text = '';
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(' ');
+      text += pageText + '\n';
+    }
 
     // Chunking: 1000 characters with 100 char overlap
     const chunks: string[] = [];
@@ -39,15 +52,14 @@ export async function processPdf(fileBuffer: Buffer, userId: string): Promise<vo
     log.info({ chunkCount: chunks.length }, 'Text chunked');
 
     for (const [index, chunk] of chunks.entries()) {
-      if (!openai) throw new Error('OpenAI API key missing for embeddings');
+      if (!genAI) throw new Error('Gemini API key missing for embeddings');
+      const embedModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 
-      // Generate Embedding
-      const embeddingRes = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: chunk,
-      });
-
-      const vector = embeddingRes.data[0].embedding;
+      const embeddingRes = await embedModel.embedContent({
+        content: { parts: [{ text: chunk }] },
+        outputDimensionality: 768,
+      } as any);
+      const vector = embeddingRes.embedding.values;
 
       // Store in Upstash Vector
       await vectorIndex.upsert({
@@ -67,19 +79,24 @@ export async function processPdf(fileBuffer: Buffer, userId: string): Promise<vo
   }
 }
 
-export async function chat(message: string, mode: 'generic' | 'rag', userId: string): Promise<string> {
+export async function chat(
+  message: string,
+  mode: 'generic' | 'rag',
+  userId: string,
+): Promise<string> {
   try {
     let context = '';
 
     if (mode === 'rag') {
-      if (!openai) throw new Error('OpenAI API key required for RAG query embeddings');
+      if (!genAI) throw new Error('Gemini API key required for RAG query embeddings');
+      const embedModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
 
-      // 1. Embed query (using OpenAI for consistency with stored vectors)
-      const embeddingRes = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: message,
-      });
-      const queryVector = embeddingRes.data[0].embedding;
+      // 1. Embed query (using Gemini text-embedding-004 clamped to 1536)
+      const embeddingRes = await embedModel.embedContent({
+        content: { parts: [{ text: message }] },
+        outputDimensionality: 768,
+      } as any);
+      const queryVector = embeddingRes.embedding.values;
 
       // 2. Search Top 2 (reduced from 3 for token saving)
       const results = await vectorIndex.query({
@@ -98,9 +115,10 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
 
     // Concise system prompt
     const now = new Date().toLocaleString();
-    const systemPrompt = mode === 'rag' 
-      ? `Current time: ${now}.\nBe concise. Use context to answer. No context? Say so.\n\nContext:\n${context}`
-      : `Current time: ${now}.\nBe concise.`;
+    const systemPrompt =
+      mode === 'rag'
+        ? `Current time: ${now}.\nBe concise. Use context to answer. No context? Say so.\n\nContext:\n${context}`
+        : `Current time: ${now}.\nBe concise.`;
 
     const MAX_RESPONSE_TOKENS = 500;
 
@@ -108,16 +126,14 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
     if (genAI) {
       try {
         log.info('Attempting Gemini completion (Primary)');
-        const model = genAI.getGenerativeModel({ 
-          model: 'gemini-flash-latest',
-          generationConfig: { maxOutputTokens: MAX_RESPONSE_TOKENS } 
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.5-flash',
+          generationConfig: { maxOutputTokens: MAX_RESPONSE_TOKENS },
         });
-        const combinedPrompt = `${systemPrompt}\n\nUser: ${message}`;
-        const result = await model.generateContent(combinedPrompt);
-        const response = await result.response;
-        return response.text();
+        const result = await model.generateContent(`${systemPrompt}\n\nUser: ${message}`);
+        return result.response.text();
       } catch (err: any) {
-        log.warn({ err: err.message }, 'Gemini failed - checking fallback');
+        log.error({ err: err.message || err }, 'Gemini Critical Failure');
         if (!openai) throw err;
       }
     }
@@ -135,10 +151,9 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
       });
       return response.choices[0].message.content || '...';
     }
-
     throw new Error('No AI provider available');
-  } catch (error: any) {
-    log.error({ error: error.message || error }, 'Chat failed');
-    throw new Error(error.message || 'AI Chat failed');
+  } catch (err: any) {
+    log.error({ error: err.message || err }, 'Chat failed');
+    throw err;
   }
 }

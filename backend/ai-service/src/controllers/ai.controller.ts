@@ -22,9 +22,8 @@ export async function handleChat(req: AuthRequest, res: Response): Promise<void>
     const reply = await aiService.chat(message, mode, req.userId!);
     res.json({ success: true, data: { reply } });
   } catch (error: any) {
-    console.error('❌ Chat Controller Error:', error);
     log.error({ error: error.message || error }, 'Chat controller failed');
-    res.status(500).json({ success: false, error: 'Internal server error' });
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 }
 
