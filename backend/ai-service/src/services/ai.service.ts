@@ -61,9 +61,9 @@ export async function processPdf(fileBuffer: Buffer, userId: string): Promise<vo
     }
 
     log.info('PDF successfully processed and stored');
-  } catch (error) {
-    log.error({ error }, 'Failed to process PDF');
-    throw new Error('PDF processing failed');
+  } catch (error: any) {
+    log.error({ error: error.message || error }, 'Failed to process PDF');
+    throw new Error(error.message || 'PDF processing failed');
   }
 }
 
@@ -72,7 +72,7 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
     let context = '';
 
     if (mode === 'rag') {
-      if (!openai) throw new Error('OpenAI API key missing for embeddings');
+      if (!openai) throw new Error('OpenAI API key required for RAG query embeddings');
 
       // 1. Embed query (using OpenAI for consistency with stored vectors)
       const embeddingRes = await openai.embeddings.create({
@@ -99,35 +99,35 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
       ? `You are a helpful AI assistant. Use the provided context to answer the user's question. If you don't know based on the context, say so.\n\nContext:\n${context}`
       : 'You are a helpful AI assistant.';
 
-    // Try OpenAI first
-    if (openai) {
+    // --- PRIORITY 1: Gemini ---
+    if (genAI) {
       try {
-        log.info('Attempting OpenAI completion');
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message },
-          ],
-        });
-        return response.choices[0].message.content || 'I could not generate a response.';
+        log.info('Attempting Gemini completion (Primary)');
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const combinedPrompt = `${systemPrompt}\n\nUser: ${message}`;
+        const result = await model.generateContent(combinedPrompt);
+        const response = await result.response;
+        return response.text();
       } catch (err: any) {
-        log.warn({ err: err.message }, 'OpenAI failed - checking for fallback');
-        if (!genAI) throw err; // Re-throw if no Gemini available
+        log.warn({ err: err.message }, 'Gemini failed - checking for fallback to OpenAI');
+        if (!openai) throw err; // Re-throw if no OpenAI available
       }
     }
 
-    // Fallback to Gemini
-    if (genAI) {
-      log.info('Attempting Gemini fallback');
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const prompt = `${systemPrompt}\n\nUser: ${message}`;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
+    // --- PRIORITY 2: OpenAI (Fallback) ---
+    if (openai) {
+      log.info('Attempting OpenAI completion (Fallback)');
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message },
+        ],
+      });
+      return response.choices[0].message.content || 'I could not generate a response.';
     }
 
-    throw new Error('No AI provider available (OpenAI or Gemini)');
+    throw new Error('No AI provider available (Gemini or OpenAI)');
   } catch (error: any) {
     log.error({ error: error.message || error }, 'Chat failed');
     throw new Error(error.message || 'AI Chat failed');
