@@ -24,7 +24,7 @@
 ## 🧬 Architecture at a Glance
 
 ```mermaid
-%%{init: {'theme':'dark','themeVariables':{'fontSize':'19px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'9px'}}}%%
 graph LR
   FE[FE] --> GW[API GW]
   GW --> A[Auth]
