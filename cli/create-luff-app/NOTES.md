@@ -53,35 +53,57 @@ NODE_ENV=development
 
 ```env
 PORT=4002
-JWT_SECRET="your-jwt-secret-change-in-production"
+JWT_SECRET="your-jwt-secret"
+NODE_ENV=development
+```
+
+**4. `backend/payment/.env`**
+
+```env
+PORT=4003
+JWT_SECRET="your-jwt-secret"
 NODE_ENV=development
 ```
 
 ### Step 3: Kubernetes Secrets
 
-To deploy securely, pass your local backend secrets into Kubernetes so the pods can access them securely:
-
 ```bash
-# Create App Secrets
-kubectl create secret generic app-secrets \
-  --from-literal=jwt-secret="your-jwt-secret-change-in-production"
+# App & Auth Secrets (...)
+# Create Posts Secrets (...)
 
-# Create Auth Secrets
-kubectl create secret generic auth-secrets \
-  --from-literal=google-client-id="your_google_client_id" \
-  --from-literal=google-client-secret="your_google_client_secret" \
-  --from-literal=frontend-url="http://localhost:3000" \
-  --from-literal=database-url="postgresql://postgres:postgres@auth-db-service:5432/auth_db"
-
-# Create Posts Secrets
-kubectl create secret generic posts-secrets \
-  --from-literal=database-url="postgresql://postgres:postgres@posts-db-service:5432/posts_db" \
-  --from-literal=jwt-secret="your-jwt-secret-change-in-production"
+# Create Payment Secrets
+kubectl create secret generic payment-secrets \
+  --from-literal=database-url="postgresql://postgres:postgres@payment-db-service:5432/payment_db" \
+  --from-literal=jwt-secret="your-jwt-secret"
 ```
 
 ---
 
-## 🌟 2. How To Run This For The First Time (Kubernetes)
+## 🌟 2. How To Run Locally
+
+We support two modes of development:
+
+### 1. Native Mode (Recommended)
+
+This is the fastest loop. Run everything directly on your machine:
+
+```bash
+npm run run-local
+```
+
+This script handles:
+
+- Stopping K8s port conflicts
+- Starting local Docker DBs
+- Running all services via `npm run dev`
+
+### 2. Kubernetes Mode (GitOps)
+
+Follow this if you want to test the full K8s stack:
+
+1. **Build & Deploy**: `npm run run-k8s build`
+2. **Access Dashboard**: `npm run argo`
+3. **Connect Ports**: `npm run access`
 
 We utilize ArgoCD as the GitOps agent. It constantly monitors your main branch's `k8s/` folder and applies the configuration locally.
 

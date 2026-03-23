@@ -35,24 +35,24 @@ For detailed troubleshooting on database connections, Kubernetes local setup, an
                     │  (Express)  │
                     └──────┬──────┘
                            │
-              ┌────────────┼────────────┐
-              │                         │
-        ┌─────┴─────┐           ┌──────┴─────┐
-        │   Auth    │           │   Posts    │
-        │  Service  │  :4001    │  Service   │  :4002
-        │ (Express) │           │  (Express) │
-        └─────┬─────┘           └──────┬─────┘
-              │                         │
-        ┌─────┴─────┐           ┌──────┴─────┐
-        │  Auth DB  │           │  Posts DB  │
-        │ (Postgres)│           │ (Postgres) │
-        └───────────┘           └────────────┘
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+   ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
+   │   Auth    │     │   Posts   │     │  Payment  │
+   │  Service  │:4001│  Service  │:4002│  Service  │:4003
+   │ (Express) │     │ (Express) │     │ (Express) │
+   └─────┬─────┘     └─────┬─────┘     └─────┬─────┘
+         │                 │                 │
+   ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
+   │  Auth DB  │     │  Posts DB │     │ Razorpay  │
+   │ (Postgres)│     │ (Postgres)│     │    API    │
+   └───────────┘     └───────────┘     └───────────┘
 
-            ┌─────────────────────────────┐
-            │        Frontend App         │
-            │          (Next.js)          │
-            │            :3000            │
-            └─────────────────────────────┘
+             ┌─────────────────────────────┐
+             │        Frontend App         │
+             │          (Next.js)          │
+             │            :3000            │
+             └─────────────────────────────┘
 ```
 
 ---
@@ -64,10 +64,12 @@ For detailed troubleshooting on database connections, Kubernetes local setup, an
 | **Frontend** | Next.js 14 (App Router), TailwindCSS, React Query |
 | **Backend**  | Node.js, Express, TypeScript                      |
 | **Database** | PostgreSQL, Prisma ORM                            |
+| **Payment**  | Integrated Stripe/Internal Payment Logic          |
 | **Auth**     | Google OAuth (PostMessage flow), JWT              |
 | **Monorepo** | Turborepo, npm workspaces                         |
 | **Infra**    | Docker, Kubernetes (ArgoCD ready)                 |
 | **Quality**  | ESLint, Prettier, Husky, Commitlint               |
+| **Toast**    | Sonner (Premium Notifications)                    |
 
 ---
 

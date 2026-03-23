@@ -18,7 +18,8 @@
     "create-service": "node scripts/create-service.js",
     "run-local": "./scripts/run-local.sh",
     "run-k8s": "./scripts/run-on-k8s.sh",
-    "access": "./scripts/access.sh"
+    "access": "./scripts/access.sh",
+    "argo": "./scripts/run-argo.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
