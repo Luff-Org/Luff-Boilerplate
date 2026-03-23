@@ -31,6 +31,22 @@ services:
       timeout: 5s
       retries: 5
 
+  payment-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: payment_db
+    ports:
+      - '5435:5432'
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   auth-service:
     build:
       context: ..
@@ -63,6 +79,23 @@ services:
       posts-db:
         condition: service_healthy
 
+  payment-service:
+    build:
+      context: ..
+      dockerfile: backend/payment/Dockerfile
+    ports:
+      - '4003:4003'
+    environment:
+      PORT: 4003
+      DATABASE_URL: postgresql://postgres:postgres@payment-db:5432/payment_db
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      NODE_ENV: development
+    depends_on:
+      payment-db:
+        condition: service_healthy
+
   gateway:
     build:
       context: ..
@@ -73,10 +106,12 @@ services:
       PORT: 4000
       AUTH_SERVICE_URL: http://auth-service:4001
       POSTS_SERVICE_URL: http://posts-service:4002
+      PAYMENT_SERVICE_URL: http://payment-service:4003
       NODE_ENV: development
     depends_on:
       - auth-service
       - posts-service
+      - payment-service
 
   frontend:
     build:
@@ -97,3 +132,4 @@ services:
 volumes:
   auth-db-data:
   posts-db-data:
+  payment-db-data:

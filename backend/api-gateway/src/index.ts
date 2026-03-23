@@ -12,7 +12,7 @@ const log = createLogger('api-gateway');
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: true }));
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'api-gateway' });

@@ -57,6 +57,8 @@ We use a **Stateless JWT-based Authentication** system.
 
 - **Database**: `posts_db` (Postgres).
 - **Key Logic**: CRUD operations for user posts.
+- **Database**: `posts_db` (Postgres).
+- **Key Logic**: CRUD operations for user posts.
 - **Routes**:
   - `GET /posts`: Publicly list all posts.
   - `POST /posts`: (Protected) Create a new post.
@@ -64,15 +66,28 @@ We use a **Stateless JWT-based Authentication** system.
 
 ### 💳 Payment Service (Port 4003)
 
-- **Role**: Razorpay Gateway Wrapper.
+- **Database**: `payment_db` (Postgres) — Stores transaction metadata.
 - **Key Logic**: Handles server-side order creation and payment verification via Razorpay SDK.
 - **Routes**:
   - `POST /payments/create-order`: Generates a Razorpay `order_id`.
   - `POST /payments/verify`: Validates the payment signature using your secret key.
+  - `GET /payments/my-purchases`: (Protected) Fetches the user's successful transaction history.
 
 ---
 
-## 🗄️ 4. Shared Packages (`/shared`)
+## 🔑 4. Credentials Checklist
+
+To run the boilerplate end-to-end, you need:
+
+| Platform     | Secret               | Where to put it                        |
+| :----------- | :------------------- | :------------------------------------- |
+| **Google**   | `CLIENT_ID / SECRET` | `backend/auth/.env` & `frontend/.env`  |
+| **Razorpay** | `KEY_ID / SECRET`    | `backend/payment/.env`                 |
+| **Monorepo** | `JWT_SECRET`         | Shared across all backend `.env` files |
+
+---
+
+## 🗄️ 5. Shared Packages (`/shared`)
 
 To maintain "DRY" (Don't Repeat Yourself) code, we use internal packages:
 

@@ -72,14 +72,16 @@ Both backend services need their own PostgreSQL instance. Start them via Docker:
 
 ```bash
 docker compose -f docker/docker-compose.yml up auth-db posts-db -d
+docker compose -f docker/docker-compose.yml up auth-db posts-db payment-db -d
 ```
 
 This starts:
 
-| Database | Port | Credentials                      |
-| -------- | ---- | -------------------------------- |
-| Auth DB  | 5433 | `postgres:postgres` / `auth_db`  |
-| Posts DB | 5434 | `postgres:postgres` / `posts_db` |
+| Database   | Port | Credentials                        |
+| ---------- | ---- | ---------------------------------- |
+| Auth DB    | 5433 | `postgres:postgres` / `auth_db`    |
+| Posts DB   | 5434 | `postgres:postgres` / `posts_db`   |
+| Payment DB | 5435 | `postgres:postgres` / `payment_db` |
 
 Verify databases are healthy:
 
@@ -87,13 +89,13 @@ Verify databases are healthy:
 docker ps
 ```
 
-You should see three `postgres:16-alpine` containers.
+You should see four `postgres:16-alpine` containers.
 
 ---
 
 ## Step 5 — Set Up Prisma (Database Schemas)
 
-Generate the custom isolated Prisma clients and push schemas to the databases:
+Each service has its own Prisma schema. Generate the clients and sync the DBs:
 
 ```bash
 # Auth service
@@ -101,15 +103,36 @@ cd backend/auth && npm run db:push && npm run db:generate && cd ../..
 
 # Posts service
 cd backend/posts && npm run db:push && npm run db:generate && cd ../..
+
+# Payment service
+cd backend/payment && npm run db:push && npm run db:generate && cd ../..
 ```
 
 _(Note: These services use isolated local Prisma generated folders to avoid monorepo type collisions)._
 
 ---
 
-## Step 6 — Configure Google OAuth
+## Step 6 — Configure Credentials
 
-... (Step 6 remains the same)
+To fully use the boilerplate, you need both Google for Login and Razorpay for Payments.
+
+### A. Google OAuth
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Create **OAuth 2.0 Client ID** (Web application).
+3. Set origin to `http://localhost:3000`.
+4. Update `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `backend/auth/.env` and `frontend/.env`.
+
+### B. Razorpay Setup
+
+1. Signup at [Razorpay Dashboard](https://dashboard.razorpay.com/).
+2. Navigate to **Account & Settings** → **API Keys**.
+3. Generate **Test Keys**.
+4. Update these in `backend/payment/.env`:
+   ```env
+   RAZORPAY_KEY_ID=rzp_test_your_id
+   RAZORPAY_KEY_SECRET=your_secret_key
+   ```
 
 ---
 
@@ -168,10 +191,11 @@ Navigate to the UI to test the layout. Click **"Login"** to start the Google `@r
 | API Gateway     | 4000 | Routes requests to services |
 | Auth Service    | 4001 | Google OAuth + JWT          |
 | Posts Service   | 4002 | Posts CRUD                  |
-| Payment Service | 4003 | Razorpay Gateway Wrapper    |
+| Payment Service | 4003 | Razorpay integration        |
 | Next.js App     | 3000 | Unified Web Interface       |
-| Auth DB         | 5433 | PostgreSQL for auth         |
-| Posts DB        | 5434 | PostgreSQL for posts        |
+| Auth DB         | 5433 | PostgreSQL (Auth/Users)     |
+| Posts DB        | 5434 | PostgreSQL (Posts/Content)  |
+| Payment DB      | 5435 | PostgreSQL (Transactions)   |
 
 ---
 

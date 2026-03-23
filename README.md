@@ -44,8 +44,8 @@ For detailed troubleshooting on database connections, Kubernetes local setup, an
    └─────┬─────┘     └─────┬─────┘     └─────┬─────┘
          │                 │                 │
    ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
-   │  Auth DB  │     │  Posts DB │     │ Razorpay  │
-   │ (Postgres)│     │ (Postgres)│     │    API    │
+   │  Auth DB  │     │  Posts DB │     │Payment DB │
+   │ (Postgres)│     │ (Postgres)│     │(Postgres) │
    └───────────┘     └───────────┘     └───────────┘
 
              ┌─────────────────────────────┐

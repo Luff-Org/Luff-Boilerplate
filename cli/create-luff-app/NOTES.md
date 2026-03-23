@@ -61,6 +61,9 @@ NODE_ENV=development
 
 ```env
 PORT=4003
+RAZORPAY_KEY_ID=rzp_test_your_id
+RAZORPAY_KEY_SECRET=your_secret_key
+DATABASE_URL="postgresql://postgres:postgres@localhost:5435/payment_db"
 JWT_SECRET="your-jwt-secret"
 NODE_ENV=development
 ```
@@ -68,12 +71,13 @@ NODE_ENV=development
 ### Step 3: Kubernetes Secrets
 
 ```bash
-# App & Auth Secrets (...)
-# Create Posts Secrets (...)
+# App, Auth & Posts Secrets (...)
 
 # Create Payment Secrets
 kubectl create secret generic payment-secrets \
   --from-literal=database-url="postgresql://postgres:postgres@payment-db-service:5432/payment_db" \
+  --from-literal=razorpay-key-id="your_key" \
+  --from-literal=razorpay-key-secret="your_secret" \
   --from-literal=jwt-secret="your-jwt-secret"
 ```
 

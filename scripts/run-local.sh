@@ -3,47 +3,35 @@ set -e
 
 echo "🚀 Switching to Local Native Development Mode..."
 
-# 1. Clear Kubernetes & Port Conflicts
+# 1. Releasing host ports from Kubernetes (LoadBalancer ports)
 echo "🛑 Releasing host ports from Kubernetes (Freeing 4000, 3000)..."
-# Force-delete services to release host ports
-kubectl delete service api-gateway frontend-service --ignore-not-found --wait=true > /dev/null 2>&1 || true
-kubectl scale deployment --all --replicas=0 -n default > /dev/null 2>&1 || true
+kubectl delete service api-gateway frontend-service 2>/dev/null || true
+kubectl scale deployment api-gateway frontend-app --replicas=0 2>/dev/null || true
 pkill -f "kubectl port-forward" || true
 
-# Verification Loop for Port 4000
-echo "⌛ Waiting for port 4000 to be released..."
-for i in {1..10}; do
-    # Use || true to prevent set -e from killing the script if port is already free
-    BLOCKER=$(lsof -ti :4000 || true)
-    if [ -z "$BLOCKER" ]; then
-        echo "✅ Port 4000 is now free."
-        break
-    else
-        echo "🧹 Kicking process $BLOCKER off port 4000..."
-        kill -9 $BLOCKER > /dev/null 2>&1 || true
-        sleep 1
-    fi
-    if [ $i -eq 10 ]; then
-        echo "⚠️  Warning: Port 4000 still seems busy."
-    fi
+# Forcefully kill any process on ports 4000, 4001, 4002, 4003 and 3000
+for port in 4000 4001 4002 4003 3000; do
+    echo "🧹 Clearing port $port..."
+    lsof -ti:$port | xargs kill -9 2>/dev/null || true
 done
 
-# Hard kill any remaining process on 3000
-echo "🧹 Clearing port 3000..."
-lsof -ti :3000 | xargs kill -9 > /dev/null 2>&1 || true
+# Verification loop for port 4000
+echo "⌛ Waiting for port 4000 to be released..."
+while lsof -i:4000 >/dev/null 2>&1; do
+    lsof -ti:4000 | xargs kill -9 2>/dev/null || true
+    sleep 1
+done
+echo "✅ Port 4000 is now free."
 
-# 2. Ensure databases are running in Docker (Backend needs them)
+# 2. Start Databases
 echo "📂 Starting databases via Docker Compose..."
-docker compose -f docker/docker-compose.yml up -d auth-db posts-db
+docker compose -f docker/docker-compose.yml up auth-db posts-db payment-db -d
 
-# 3. Clean environment setup for local
-# Some services might need to point to 'localhost' instead of 'host.docker.internal' when running natively
-export DATABASE_URL_AUTH="postgresql://postgres:postgres@localhost:5433/auth_db"
-export DATABASE_URL_POSTS="postgresql://postgres:postgres@localhost:5434/posts_db"
+# 3. Refresh dependencies & Generate Prisma Clients
+echo "🛠️ Refreshing dependencies and generating Prisma Clients..."
+npm install
+npm run db:generate --workspaces --if-present
 
-echo "-----------------------------------------------------------"
-echo "✨ Launching all services in Dev Mode (Turbo)..."
-echo "-----------------------------------------------------------"
-
-# 4. Run the app
+# 4. Run Application in Native Mode
+echo "🚀 Launching all services (Native Mode)..."
 npm run dev

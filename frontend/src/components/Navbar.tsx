@@ -20,9 +20,14 @@ export function Navbar() {
             Store
           </Link>
           {isAuthenticated && (
-            <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
-              Dashboard
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+                Dashboard
+              </Link>
+              <Link href="/purchases" className="text-sm text-gray-600 hover:text-gray-900">
+                Purchases
+              </Link>
+            </div>
           )}
         </div>
 

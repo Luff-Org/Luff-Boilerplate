@@ -13,7 +13,7 @@ const log = createLogger('auth-service');
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(cookieParser());
 
