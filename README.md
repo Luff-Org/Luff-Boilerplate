@@ -25,46 +25,16 @@
 
 ```mermaid
 graph LR
-  subgraph Client
-    A["🖥️ Next.js 14<br/>:3000"]
-  end
-
-  subgraph Gateway
-    B["🛡️ API Gateway<br/>:4000"]
-  end
-
-  subgraph Microservices
-    C["🔐 Auth<br/>:4001"]
-    D["📝 Posts<br/>:4002"]
-    E["💳 Payment<br/>:4003"]
-    F["🧠 AI Service<br/>:4004"]
-  end
-
-  subgraph Data
-    G[("🗄️ Auth DB<br/>:5433")]
-    H[("🗄️ Posts DB<br/>:5434")]
-    I[("🗄️ Payment DB<br/>:5435")]
-    J["🔮 Upstash Vector"]
-  end
-
-  A -->|"All API Calls"| B
-  B --> C
-  B --> D
-  B --> E
-  B --> F
-  C --> G
-  D --> H
-  E --> I
-  F -->|"RAG Queries"| J
-  F -->|"Inference"| K["✨ Gemini 2.5 Flash"]
-
-  style A fill:#0f172a,stroke:#6366f1,color:#e2e8f0
-  style B fill:#1e1b4b,stroke:#818cf8,color:#e2e8f0
-  style C fill:#1e3a5f,stroke:#60a5fa,color:#e2e8f0
-  style D fill:#1a3636,stroke:#34d399,color:#e2e8f0
-  style E fill:#3b1f2b,stroke:#f472b6,color:#e2e8f0
-  style F fill:#2d1b69,stroke:#a78bfa,color:#e2e8f0
-  style K fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  A["Next.js :3000"] -->|API| B["Gateway :4000"]
+  B --> C["Auth :4001"]
+  B --> D["Posts :4002"]
+  B --> E["Payment :4003"]
+  B --> F["AI :4004"]
+  C --> G[(Auth DB)]
+  D --> H[(Posts DB)]
+  E --> I[(Payment DB)]
+  F --> J[(Upstash Vector)]
+  F --> K["Gemini 2.5"]
 ```
 
 ---
@@ -88,19 +58,15 @@ The AI domain is the heartbeat of LUFF. — providing production-ready intellige
 
 ```mermaid
 flowchart TD
-  A["📄 User Uploads PDF"] --> B["📦 PDF Parser<br/><i>pdfjs-dist</i>"]
-  B --> C["✂️ Text Chunking<br/><i>Recursive Splitting</i>"]
-  C --> D["🔮 Embedding<br/><i>768-dim vectors</i>"]
-  D --> E["☁️ Upstash Vector<br/><i>Index & Store</i>"]
-
-  F["💬 User Asks Question"] --> G["🔍 Semantic Search<br/><i>Top-K Retrieval</i>"]
+  A[Upload PDF] --> B[Parse Text]
+  B --> C[Chunk Text]
+  C --> D[Create Embeddings]
+  D --> E[Store in Upstash]
+  F[Ask Question] --> G[Semantic Search]
   E --> G
-  G --> H["📋 Context Assembly"]
-  H --> I["✨ Gemini 2.5 Flash<br/><i>Grounded Response</i>"]
-  I --> J["💬 AI Response"]
-
-  style I fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
-  style E fill:#065f46,stroke:#34d399,color:#e2e8f0
+  G --> H[Build Context]
+  H --> I[Gemini 2.5 Flash]
+  I --> J[AI Response]
 ```
 
 | Feature | Details |

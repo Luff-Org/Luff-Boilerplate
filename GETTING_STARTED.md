@@ -30,8 +30,11 @@ node -v && npm -v && docker -v && git --version
 
 ```mermaid
 flowchart LR
-  A["1️⃣ Clone"] --> B["2️⃣ Install"] --> C["3️⃣ Env Files"] --> D["4️⃣ Docker DBs"] --> E["5️⃣ Prisma"] --> F["6️⃣ Launch 🚀"]
-  style F fill:#4c1d95,stroke:#c084fc,color:#e2e8f0
+  A[Clone] --> B[Install]
+  B --> C[Env Setup]
+  C --> D[Docker DBs]
+  D --> E[Prisma]
+  E --> F[Launch]
 ```
 
 ---
