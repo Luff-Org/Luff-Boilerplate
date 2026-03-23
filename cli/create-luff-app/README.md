@@ -85,15 +85,12 @@ During scaffolding, the CLI asks:
 
 ### AI Architecture
 
-```mermaid
-flowchart LR
-  A[Upload] --> B[Parse]
-  B --> C[Embed]
-  C --> D[Store]
-  E[Query] --> F[Search]
-  D -.-> F
-  F --> G[Gemini]
-  G --> H[Answer]
+```
+  Upload PDF → Parse → Embed (768-dim) → Store (Upstash Vector)
+                                                  │
+  Ask Question → Semantic Search ←────────────────┘
+                      │
+                 Gemini 2.5 Flash → Grounded Answer
 ```
 
 ---

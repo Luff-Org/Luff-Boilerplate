@@ -12,19 +12,30 @@
 
 ## 🧬 1. System Architecture
 
-```mermaid
-graph TB
-  U[User] --> FE[Frontend]
-  FE --> GW[Gateway]
-  GW --> A[Auth]
-  GW --> P[Posts]
-  GW --> Pay[Payment]
-  GW --> AI[AI]
-  A --> ADB[(AuthDB)]
-  P --> PDB[(PostsDB)]
-  Pay --> PayDB[(PayDB)]
-  AI --> UV[(Vector)]
-  AI --> GM[Gemini]
+```
+                     ┌─────────────────────────┐
+                     │  Frontend (Next.js :3000)│
+                     └────────────┬────────────┘
+                                  │
+                     ┌────────────▼────────────┐
+                     │ API Gateway (:4000)      │
+                     │ CORS · Rate Limiting     │
+                     └──┬─────┬─────┬─────┬────┘
+                        │     │     │     │
+               ┌────────▼┐ ┌──▼──┐ ┌▼─────┐ ┌▼───────┐
+               │Auth     │ │Posts│ │Pay-  │ │AI      │
+               │:4001    │ │:4002│ │ment  │ │:4004   │
+               │         │ │     │ │:4003 │ │Gemini  │
+               └────┬────┘ └──┬──┘ └──┬───┘ └──┬──┬──┘
+                    │         │       │        │  │
+               ┌────▼──┐ ┌───▼──┐ ┌──▼───┐ ┌──▼──┐│
+               │AuthDB │ │Posts │ │PayDB │ │Vec- ││
+               │:5433  │ │DB   │ │:5435 │ │tor  ││
+               └───────┘ │:5434│ └──────┘ └─────┘│
+                          └──────┘           ┌────▼────┐
+                                             │Gemini   │
+                                             │2.5 API  │
+                                             └─────────┘
 ```
 
 ### Key Principles
@@ -44,17 +55,12 @@ The AI domain is the most architecturally significant service — providing prod
 
 ### RAG Pipeline Flow
 
-```mermaid
-flowchart LR
-  A[Upload] --> B[Parse]
-  B --> C[Split]
-  C --> D[Embed]
-  D --> E[Store]
-  F[Query] --> G[Search]
-  E -.-> G
-  G --> H[Context]
-  H --> I[Gemini]
-  I --> J[Answer]
+```
+  INGESTION:   Upload PDF → Parse (pdfjs) → Chunk → Embed (768-dim) → Store (Upstash Vector)
+                                                                            │
+  QUERY:       User Question → Semantic Search (Top-K) ←────────────────────┘
+                                    │
+                              Build Context → Gemini 2.5 Flash → Grounded Answer
 ```
 
 ### AI Capabilities
@@ -77,34 +83,28 @@ flowchart LR
 
 ## 🔐 3. Authentication — End-to-End Flow
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant F as Frontend
-  participant G as Google
-  participant A as Auth
-  participant DB as AuthDB
+### Login Flow
 
-  U->>F: Login
-  F->>G: OAuth Popup
-  G-->>F: Token
-  F->>A: POST /auth/google
-  A->>G: Verify
-  G-->>A: Profile
-  A->>DB: Upsert
-  A->>A: Sign JWT
-  A-->>F: JWT + User
-  F->>F: Store JWT
+```
+  User → Click "Login with Google"
+    → Frontend opens OAuth Popup
+    → Google returns credential token
+    → Frontend sends POST /auth/google
+    → Auth Service verifies with Google
+    → Auth Service upserts user in DB
+    → Auth Service signs JWT { userId, email }
+    → Frontend receives { token, user }
+    → Frontend stores JWT in localStorage
 ```
 
-### How JWT Flows Across Services
+### Authenticated Request Flow
 
-```mermaid
-flowchart LR
-  A[Frontend] --> B[Gateway]
-  B --> C[Middleware]
-  C -->|Valid| D[OK]
-  C -->|Invalid| E[401]
+```
+  Frontend (attaches JWT in header)
+    → API Gateway (passes through)
+    → Service Auth Middleware (verifies JWT)
+        ├─ Valid   → req.user attached → proceed
+        └─ Invalid → 401 Unauthorized
 ```
 
 > Every backend service shares the same `JWT_SECRET` and runs identical middleware. The Gateway does **not** validate tokens — each service handles its own auth.
@@ -120,25 +120,20 @@ flowchart LR
 
 ## 💳 4. Payment Service — Transaction Architecture
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant F as Frontend
-  participant P as Payment
-  participant R as Razorpay
-  participant DB as PayDB
+### Purchase Flow
 
-  U->>F: Buy
-  F->>P: Create Order
-  P->>R: Create
-  R-->>P: order_id
-  P-->>F: order_id
-  F->>R: Checkout
-  R-->>F: Callback
-  F->>P: Verify
-  P->>P: HMAC Check
-  P->>DB: Save
-  P-->>F: Success
+```
+  User clicks "Buy"
+    → Frontend: POST /payments/create-order { amount }
+    → Payment Service: razorpay.orders.create()
+    → Razorpay returns order_id
+    → Frontend opens Razorpay Checkout Modal
+    → User completes payment
+    → Razorpay returns { payment_id, signature }
+    → Frontend: POST /payments/verify
+    → Payment Service: HMAC-SHA256 signature check
+    → Payment Service: INSERT into payment_db ✅
+    → Frontend: Payment Verified
 ```
 
 ### Payment Routes
@@ -174,15 +169,14 @@ sequenceDiagram
 
 ## 🛡️ 6. API Gateway — Orchestration Hub
 
-```mermaid
-flowchart LR
-  Req[Request] --> CORS
-  CORS --> Rate[Limiter]
-  Rate --> R{Router}
-  R --> A[Auth]
-  R --> P[Posts]
-  R --> Pay[Payment]
-  R --> AI[AI]
+```
+  Client Request → CORS Check → Rate Limiter → Route Matcher
+                                                    │
+                                  ┌─────────┬───────┼──────────┐
+                                  │         │       │          │
+                              /auth/*   /posts/*  /pay/*    /ai/*
+                                  │         │       │          │
+                              :4001     :4002    :4003      :4004
 ```
 
 | Feature | Implementation |
@@ -218,16 +212,22 @@ flowchart LR
 
 ## 🎨 9. Frontend Architecture
 
-```mermaid
-flowchart TD
-  L[Layout] --> Nav[Navbar]
-  L --> Pages
-  Pages --> Dash[Dashboard]
-  Pages --> Posts
-  Pages --> Store
-  Pages --> Chat[AI Chat]
-  Pages --> Profile
-  Pages --> Purchases
+```
+  Next.js 14 App Router
+    ├── Layout + Providers
+    │     ├── Navbar (Theme Toggle)
+    │     └── Pages
+    │           ├── Dashboard (Setup Guide, API Map, Credentials)
+    │           ├── Posts (Community Feed)
+    │           ├── Store (Razorpay Products)
+    │           ├── Chat (AI + RAG) ← Intelligence Core
+    │           ├── Profile
+    │           └── Purchases (Transaction History)
+    │
+    └── State Layer
+          ├── React Query (Server State)
+          ├── ThemeContext (Dark/Light)
+          └── useAuth Hook (JWT)
 ```
 
 | Layer | Technology | Purpose |
@@ -243,14 +243,8 @@ flowchart TD
 
 ## ⚙️ 10. DevOps & CI/CD
 
-```mermaid
-flowchart LR
-  Push[Push] --> CI[Actions]
-  CI --> Lint
-  Lint --> Build
-  Build --> GHCR[Registry]
-  GHCR --> Argo[ArgoCD]
-  Argo --> K8s[Deploy]
+```
+  git push main → GitHub Actions → Lint → Build → Docker → Push (ghcr.io) → ArgoCD → K8s Deploy
 ```
 
 | Stage | Tool | What Happens |
