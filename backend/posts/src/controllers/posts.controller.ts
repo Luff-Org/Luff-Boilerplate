@@ -46,7 +46,13 @@ export async function createPost(req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    const post = await postsService.createPost({ title, content, authorId: req.userId });
+    const post = await postsService.createPost({
+      title,
+      content,
+      authorId: req.userId,
+      authorName: req.userName || 'Anonymous',
+      authorPicture: req.userPicture,
+    });
     log.info({ postId: post.id }, 'Post created');
     res.status(201).json({ success: true, data: post });
   } catch (error) {

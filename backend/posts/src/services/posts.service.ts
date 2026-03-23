@@ -10,7 +10,13 @@ export async function getPostById(id: string) {
   return prisma.post.findUnique({ where: { id } });
 }
 
-export async function createPost(data: { title: string; content: string; authorId: string }) {
+export async function createPost(data: {
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorPicture?: string;
+}) {
   return prisma.post.create({ data });
 }
 

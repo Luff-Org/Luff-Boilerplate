@@ -46,6 +46,14 @@ export async function logoutUser() {
   localStorage.removeItem('auth_token');
 }
 
+export async function updateProfile(dto: { name: string }) {
+  const { data } = await api.patch('/auth/me', dto);
+  if (data.data?.token) {
+    localStorage.setItem('auth_token', data.data.token);
+  }
+  return data.data;
+}
+
 // Posts
 export async function getPosts() {
   const { data } = await api.get('/posts');

@@ -5,6 +5,8 @@ import { env } from '../config/env';
 
 export interface AuthRequest extends Request {
   userId?: string;
+  userName?: string;
+  userPicture?: string;
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -17,8 +19,14 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
+      userId: string;
+      name: string;
+      picture?: string;
+    };
     req.userId = decoded.userId;
+    req.userName = decoded.name;
+    req.userPicture = decoded.picture;
     next();
   } catch {
     res.status(401).json({ success: false, error: 'Invalid token' });

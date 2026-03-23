@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import { createLogger } from '@shared/logger';
 
 import { prisma } from '../db';
 import { env } from '../config/env';
 import { oauth2Client } from '../config/googleConfig';
-import { createLogger } from '@shared/logger';
 import { AuthRequest } from '../middlewares/auth';
 
 const log = createLogger('auth-controller');
@@ -45,7 +45,11 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       });
     }
 
-    const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, { expiresIn: '15d' });
+    const token = jwt.sign(
+      { userId: user.id, name: user.name, picture: user.picture },
+      env.JWT_SECRET,
+      { expiresIn: '15d' },
+    );
 
     res.status(200).json({
       success: true,
@@ -71,6 +75,40 @@ export const myProfile = async (req: Request, res: Response, next: NextFunction)
     }
 
     res.status(200).json({ success: true, data: user });
+  } catch (error: any) {
+    log.error({ error: error.message || error }, 'Controller Error');
+    res.status(500).json({ message: error.message || 'Internal Server Error' });
+  }
+};
+
+export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const authReq = req as AuthRequest;
+    if (!authReq.userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: authReq.userId },
+      data: { name },
+    });
+
+    const token = jwt.sign(
+      { userId: user.id, name: user.name, picture: user.picture },
+      env.JWT_SECRET,
+      { expiresIn: '15d' },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { token, user },
+    });
   } catch (error: any) {
     log.error({ error: error.message || error }, 'Controller Error');
     res.status(500).json({ message: error.message || 'Internal Server Error' });
