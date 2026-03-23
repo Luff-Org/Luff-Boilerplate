@@ -15,7 +15,10 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky",
-    "create-service": "node scripts/create-service.js"
+    "create-service": "node scripts/create-service.js",
+    "run-local": "./scripts/run-local.sh",
+    "run-k8s": "./scripts/run-on-k8s.sh",
+    "access": "./scripts/access.sh"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.0",
