@@ -42,14 +42,14 @@ graph LR
 
 ## 📡 Service Directory
 
-| | Service | Port | Tech Stack | What It Does |
-|:---:|:---|:---:|:---|:---|
-| 🧠 | **AI Service** | `4004` | Gemini 2.5 Flash, Upstash Vector, RAG | PDF intelligence, contextual chat, vector embeddings |
-| 🔐 | **Auth Service** | `4001` | Google OAuth, JWT, Prisma | Stateless authentication & user management |
-| 📝 | **Posts Service** | `4002` | Express, Prisma, JWT Middleware | Community CRUD with owner enforcement |
-| 💳 | **Payment Service** | `4003` | Razorpay SDK, Prisma, Webhooks | Order creation, signature verification, ledgering |
-| 🛡️ | **API Gateway** | `4000` | Express, http-proxy-middleware | Reverse proxy, CORS, rate-limiting |
-| 🖥️ | **Frontend** | `3000` | Next.js 14, Tailwind, React Query | Premium UI with dark/light mode |
+|     | Service             |  Port  | Tech Stack                            | What It Does                                         |
+| :-: | :------------------ | :----: | :------------------------------------ | :--------------------------------------------------- |
+| 🧠  | **AI Service**      | `4004` | Gemini 2.5 Flash, Upstash Vector, RAG | PDF intelligence, contextual chat, vector embeddings |
+| 🔐  | **Auth Service**    | `4001` | Google OAuth, JWT, Prisma             | Stateless authentication & user management           |
+| 📝  | **Posts Service**   | `4002` | Express, Prisma, JWT Middleware       | Community CRUD with owner enforcement                |
+| 💳  | **Payment Service** | `4003` | Razorpay SDK, Prisma, Webhooks        | Order creation, signature verification, ledgering    |
+| 🛡️  | **API Gateway**     | `4000` | Express, http-proxy-middleware        | Reverse proxy, CORS, rate-limiting                   |
+| 🖥️  | **Frontend**        | `3000` | Next.js 14, Tailwind, React Query     | Premium UI with dark/light mode                      |
 
 ---
 
@@ -57,18 +57,19 @@ graph LR
 
 The AI domain is the heartbeat of LUFF. — providing production-ready intelligence out of the box.
 
-| Feature | Details |
-|:---|:---|
-| **Model** | Google Gemini 2.5 Flash — low-latency, high-quality reasoning |
-| **Vector Store** | Upstash Vector — serverless, 768-dimensional embeddings |
-| **RAG Pipeline** | Upload → Parse → Chunk → Embed → Store → Query → Generate |
-| **Modes** | Generic Chat (direct LLM) + RAG Mode (PDF-grounded answers) |
+| Feature          | Details                                                       |
+| :--------------- | :------------------------------------------------------------ |
+| **Model**        | Google Gemini 2.5 Flash — low-latency, high-quality reasoning |
+| **Vector Store** | Upstash Vector — serverless, 768-dimensional embeddings       |
+| **RAG Pipeline** | Upload → Parse → Chunk → Embed → Store → Query → Generate     |
+| **Modes**        | Generic Chat (direct LLM) + RAG Mode (PDF-grounded answers)   |
 
 ---
 
 ## 💳 Payment Service — Transaction Infrastructure
 
-<b>🔍 Click to expand Payment Architecture</b>
+<details open>
+<summary><b>🔍 Click to expand Payment Architecture</b></summary>
 
 ```mermaid
 %%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
@@ -95,17 +96,20 @@ sequenceDiagram
   P-->>F: Verified
 ```
 
-| Route | Method | Auth | Description |
-|:---|:---:|:---:|:---|
-| `/payments/create-order` | POST | ✅ | Creates a Razorpay order with amount & currency |
-| `/payments/verify` | POST | ✅ | Verifies payment signature (HMAC-SHA256) |
-| `/payments/my-purchases` | GET | ✅ | Returns user's transaction history |
+| Route                    | Method | Auth | Description                                     |
+| :----------------------- | :----: | :--: | :---------------------------------------------- |
+| `/payments/create-order` |  POST  |  ✅  | Creates a Razorpay order with amount & currency |
+| `/payments/verify`       |  POST  |  ✅  | Verifies payment signature (HMAC-SHA256)        |
+| `/payments/my-purchases` |  GET   |  ✅  | Returns user's transaction history              |
+
+</details>
 
 ---
 
 ## 🔐 Auth Service — Stateless Security
 
-<b>🔍 Click to expand Authentication Flow</b>
+<details open>
+<summary><b>🔍 Click to expand Authentication Flow</b></summary>
 
 ```mermaid
 %%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
@@ -128,10 +132,12 @@ sequenceDiagram
   F->>F: Store JWT
 ```
 
-| Route | Method | Auth | Description |
-|:---|:---:|:---:|:---|
-| `POST /auth/google` | POST | ❌ | Validates Google token, returns JWT |
-| `GET /auth/me` | GET | ✅ | Returns authenticated user profile |
+| Route               | Method | Auth | Description                         |
+| :------------------ | :----: | :--: | :---------------------------------- |
+| `POST /auth/google` |  POST  |  ❌  | Validates Google token, returns JWT |
+| `GET /auth/me`      |  GET   |  ✅  | Returns authenticated user profile  |
+
+</details>
 
 ---
 
@@ -140,11 +146,11 @@ sequenceDiagram
 <details>
 <summary><b>🔍 Click to expand Posts Architecture</b></summary>
 
-| Route | Method | Auth | Description |
-|:---|:---:|:---:|:---|
-| `GET /posts` | GET | ❌ | List all community posts (public) |
-| `POST /posts` | POST | ✅ | Create a new post (authenticated) |
-| `DELETE /posts/:id` | DELETE | ✅ | Delete own post (owner enforcement) |
+| Route               | Method | Auth | Description                         |
+| :------------------ | :----: | :--: | :---------------------------------- |
+| `GET /posts`        |  GET   |  ❌  | List all community posts (public)   |
+| `POST /posts`       |  POST  |  ✅  | Create a new post (authenticated)   |
+| `DELETE /posts/:id` | DELETE |  ✅  | Delete own post (owner enforcement) |
 
 - **Database**: Isolated PostgreSQL instance (`posts_db`)
 - **ORM**: Prisma with generated client
@@ -193,7 +199,7 @@ npm run run-local
    UPSTASH_VECTOR_REST_URL=https://your-index.upstash.io
    UPSTASH_VECTOR_REST_TOKEN=your_token
    ```
-</details>
+   </details>
 
 <details>
 <summary><b>🔐 Auth Service — Google OAuth</b></summary>
@@ -206,7 +212,7 @@ npm run run-local
    GOOGLE_CLIENT_ID=your_client_id
    GOOGLE_CLIENT_SECRET=your_client_secret
    ```
-</details>
+   </details>
 
 <details>
 <summary><b>💳 Payment Service — Razorpay</b></summary>
@@ -218,17 +224,17 @@ npm run run-local
    RAZORPAY_KEY_ID=rzp_test_your_id
    RAZORPAY_KEY_SECRET=your_secret
    ```
-</details>
+   </details>
 
 ---
 
 ## 🐳 Deployment
 
-| Mode | Command | Use Case |
-|:---|:---|:---|
-| **Local Dev** | `npm run run-local` | Fastest iteration loop |
-| **Docker** | `docker compose up --build` | Production-like containers |
-| **Kubernetes** | `kubectl apply -f k8s/` | Full GitOps with ArgoCD |
+| Mode           | Command                     | Use Case                   |
+| :------------- | :-------------------------- | :------------------------- |
+| **Local Dev**  | `npm run run-local`         | Fastest iteration loop     |
+| **Docker**     | `docker compose up --build` | Production-like containers |
+| **Kubernetes** | `kubectl apply -f k8s/`     | Full GitOps with ArgoCD    |
 
 ---
 
