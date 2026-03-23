@@ -27,6 +27,9 @@ export function Navbar() {
               <Link href="/purchases" className="text-sm text-gray-600 hover:text-gray-900">
                 Purchases
               </Link>
+              <Link href="/chat" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full transition-all">
+                ✨ AI Chat
+              </Link>
             </div>
           )}
         </div>
