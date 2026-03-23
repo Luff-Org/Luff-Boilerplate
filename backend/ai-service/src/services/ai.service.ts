@@ -1,14 +1,19 @@
 import OpenAI from 'openai';
 import { Index } from '@upstash/vector';
 import pdf from 'pdf-parse';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env';
 import { createLogger } from '@shared/logger';
 
 const log = createLogger('ai-service');
 
-const openai = new OpenAI({
+// Initialize OpenAI (if key is present)
+const openai = env.OPENAI_API_KEY ? new OpenAI({
   apiKey: env.OPENAI_API_KEY,
-});
+}) : null;
+
+// Initialize Gemini (if key is present)
+const genAI = env.GEMINI_API_KEY ? new GoogleGenerativeAI(env.GEMINI_API_KEY) : null;
 
 const vectorIndex = new Index({
   url: env.UPSTASH_VECTOR_REST_URL,
@@ -34,6 +39,8 @@ export async function processPdf(fileBuffer: Buffer, userId: string): Promise<vo
     log.info({ chunkCount: chunks.length }, 'Text chunked');
 
     for (const [index, chunk] of chunks.entries()) {
+      if (!openai) throw new Error('OpenAI API key missing for embeddings');
+
       // Generate Embedding
       const embeddingRes = await openai.embeddings.create({
         model: 'text-embedding-3-small',
@@ -65,7 +72,9 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
     let context = '';
 
     if (mode === 'rag') {
-      // 1. Embed query
+      if (!openai) throw new Error('OpenAI API key missing for embeddings');
+
+      // 1. Embed query (using OpenAI for consistency with stored vectors)
       const embeddingRes = await openai.embeddings.create({
         model: 'text-embedding-3-small',
         input: message,
@@ -90,15 +99,35 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
       ? `You are a helpful AI assistant. Use the provided context to answer the user's question. If you don't know based on the context, say so.\n\nContext:\n${context}`
       : 'You are a helpful AI assistant.';
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
-    });
+    // Try OpenAI first
+    if (openai) {
+      try {
+        log.info('Attempting OpenAI completion');
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message },
+          ],
+        });
+        return response.choices[0].message.content || 'I could not generate a response.';
+      } catch (err: any) {
+        log.warn({ err: err.message }, 'OpenAI failed - checking for fallback');
+        if (!genAI) throw err; // Re-throw if no Gemini available
+      }
+    }
 
-    return response.choices[0].message.content || 'I could not generate a response.';
+    // Fallback to Gemini
+    if (genAI) {
+      log.info('Attempting Gemini fallback');
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = `${systemPrompt}\n\nUser: ${message}`;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    }
+
+    throw new Error('No AI provider available (OpenAI or Gemini)');
   } catch (error: any) {
     log.error({ error: error.message || error }, 'Chat failed');
     throw new Error(error.message || 'AI Chat failed');

@@ -7,7 +7,8 @@ const envSchema = z.object({
   PORT: z.string().default('4004'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   JWT_SECRET: z.string(),
-  OPENAI_API_KEY: z.string(),
+  OPENAI_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
   UPSTASH_VECTOR_REST_URL: z.string().url(),
   UPSTASH_VECTOR_REST_TOKEN: z.string(),
 });
