@@ -81,10 +81,10 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
       });
       const queryVector = embeddingRes.data[0].embedding;
 
-      // 2. Search Top 3
+      // 2. Search Top 2 (reduced from 3 for token saving)
       const results = await vectorIndex.query({
         vector: queryVector,
-        topK: 3,
+        topK: 2,
         includeMetadata: true,
         filter: `userId = '${userId}'`,
       });
@@ -92,25 +92,32 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
       context = results
         .map((r) => r.metadata?.text)
         .filter(Boolean)
-        .join('\n\n');
+        .join('\n\n')
+        .slice(0, 1500); // Strict char limit on context
     }
 
+    // Concise system prompt
     const systemPrompt = mode === 'rag' 
-      ? `You are a helpful AI assistant. Use the provided context to answer the user's question. If you don't know based on the context, say so.\n\nContext:\n${context}`
-      : 'You are a helpful AI assistant.';
+      ? `Be concise. Use context to answer. No context? Say so.\n\nContext:\n${context}`
+      : 'Be concise.';
+
+    const MAX_RESPONSE_TOKENS = 150; // Strict output limit
 
     // --- PRIORITY 1: Gemini ---
     if (genAI) {
       try {
         log.info('Attempting Gemini completion (Primary)');
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ 
+          model: 'gemini-1.5-flash',
+          generationConfig: { maxOutputTokens: MAX_RESPONSE_TOKENS } 
+        });
         const combinedPrompt = `${systemPrompt}\n\nUser: ${message}`;
         const result = await model.generateContent(combinedPrompt);
         const response = await result.response;
         return response.text();
       } catch (err: any) {
-        log.warn({ err: err.message }, 'Gemini failed - checking for fallback to OpenAI');
-        if (!openai) throw err; // Re-throw if no OpenAI available
+        log.warn({ err: err.message }, 'Gemini failed - checking fallback');
+        if (!openai) throw err;
       }
     }
 
@@ -123,11 +130,12 @@ export async function chat(message: string, mode: 'generic' | 'rag', userId: str
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message },
         ],
+        max_tokens: MAX_RESPONSE_TOKENS, // Strict output limit
       });
-      return response.choices[0].message.content || 'I could not generate a response.';
+      return response.choices[0].message.content || '...';
     }
 
-    throw new Error('No AI provider available (Gemini or OpenAI)');
+    throw new Error('No AI provider available');
   } catch (error: any) {
     log.error({ error: error.message || error }, 'Chat failed');
     throw new Error(error.message || 'AI Chat failed');
