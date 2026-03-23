@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-env node */
 
 const degit = require("degit");
 const fs = require("fs");
@@ -81,7 +82,7 @@ async function main() {
     console.log("Next steps:");
     console.log(`  cd ${projectName}`);
     console.log(
-      "  docker compose -f docker/docker-compose.yml up auth-db posts-db -d"
+      "  docker compose -f docker/docker-compose.yml up auth-db posts-db payment-db -d"
     );
     console.log(
       "  set up .env files from .env.example files, can also use script > npm run setup"
