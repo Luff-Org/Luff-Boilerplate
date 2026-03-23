@@ -35,24 +35,24 @@ For detailed troubleshooting on database connections, Kubernetes local setup, an
                     │  (Express)  │
                     └──────┬──────┘
                            │
-              ┌────────────┼────────────┬────────────┐
-              │                         │            │
-        ┌─────┴─────┐           ┌──────┴─────┐ ┌─────┴─────┐
-        │   Auth    │           │   Posts    │ │  Payment  │
-        │  Service  │  :4001    │  Service   │ │  Service  │ :4003
-        │ (Express) │           │  (Express) │ │ (Express) │
-        └─────┬─────┘           └──────┬─────┘ └─────┬─────┘
-              │                         │            │
-        ┌─────┴─────┐           ┌──────┴─────┐ ┌─────┴─────┐
-        │  Auth DB  │           │  Posts DB  │ │ Payment DB│
-        │ (Postgres)│           │ (Postgres) │ │(Postgres) │
-        └───────────┘           └────────────┘ └───────────┘
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+   ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
+   │   Auth    │     │   Posts   │     │  Payment  │
+   │  Service  │:4001│  Service  │:4002│  Service  │:4003
+   │ (Express) │     │ (Express) │     │ (Express) │
+   └─────┬─────┘     └─────┬─────┘     └─────┬─────┘
+         │                 │                 │
+   ┌─────┴─────┐     ┌─────┴─────┐     ┌─────┴─────┐
+   │  Auth DB  │     │  Posts DB │     │Payment DB │
+   │ (Postgres)│     │ (Postgres)│     │(Postgres) │
+   └───────────┘     └───────────┘     └───────────┘
 
-            ┌──────────────────────────────────────────┐
-            │              Frontend App                │
-            │                (Next.js)                 │
-            │                  :3000                   │
-            └──────────────────────────────────────────┘
+             ┌─────────────────────────────┐
+             │        Frontend App         │
+             │          (Next.js)          │
+             │            :3000            │
+             └─────────────────────────────┘
 ```
 
 ---
@@ -64,10 +64,12 @@ For detailed troubleshooting on database connections, Kubernetes local setup, an
 | **Frontend** | Next.js 14 (App Router), TailwindCSS, React Query |
 | **Backend**  | Node.js, Express, TypeScript                      |
 | **Database** | PostgreSQL, Prisma ORM                            |
+| **Payment**  | Integrated Stripe/Internal Payment Logic          |
 | **Auth**     | Google OAuth (PostMessage flow), JWT              |
 | **Monorepo** | Turborepo, npm workspaces                         |
 | **Infra**    | Docker, Kubernetes (ArgoCD ready)                 |
 | **Quality**  | ESLint, Prettier, Husky, Commitlint               |
+| **Toast**    | Sonner (Premium Notifications)                    |
 
 ---
 
@@ -101,7 +103,7 @@ We provide a setup script to automate `.env` creation:
 npm run setup
 
 # Spin up PostgreSQL instances via Docker
-docker compose -f docker/docker-compose.yml up auth-db posts-db payment-db -d
+docker compose -f docker/docker-compose.yml up auth-db posts-db -d
 ```
 
 ### 4. Database Initialization
@@ -114,9 +116,6 @@ cd backend/auth && npm run db:push && npm run db:generate && cd ../..
 
 # Posts service
 cd backend/posts && npm run db:push && npm run db:generate && cd ../..
-
-# Payment service
-cd backend/payment && npm run db:push && npm run db:generate && cd ../..
 ```
 
 ### 5. Start Developing
@@ -131,7 +130,6 @@ Your services will be available at:
 - **API Gateway**: [http://localhost:4000](http://localhost:4000)
 - **Auth Service**: [http://localhost:4001](http://localhost:4001)
 - **Posts Service**: [http://localhost:4002](http://localhost:4002)
-- **Payment Service**: [http://localhost:4003](http://localhost:4003)
 
 ---
 
@@ -142,7 +140,6 @@ Your services will be available at:
 ├── backend/
 │   ├── auth/              # Auth microservice (Google OAuth + JWT)
 │   ├── posts/             # Posts microservice (CRUD)
-│   ├── payment/           # Payment microservice (Razorpay + Orders)
 │   └── api-gateway/       # Express Proxy & Rate Limiting
 ├── shared/                # Shared internal packages (Types, Logger, Config)
 ├── docker/                # Docker Compose configurations
