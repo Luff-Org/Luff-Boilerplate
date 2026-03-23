@@ -83,3 +83,18 @@ export async function verifyPayment(paymentData: any) {
   const { data } = await api.post('/payments/verify', paymentData);
   return data;
 }
+
+// AI
+export async function askAi(message: string, mode: 'generic' | 'rag') {
+  const { data } = await api.post('/ai/chat', { message, mode });
+  return data.data;
+}
+
+export async function uploadAiPdf(file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/ai/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}

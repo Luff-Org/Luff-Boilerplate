@@ -9,8 +9,8 @@ kubectl delete service api-gateway frontend-service 2>/dev/null || true
 kubectl scale deployment api-gateway frontend-app --replicas=0 2>/dev/null || true
 pkill -f "kubectl port-forward" || true
 
-# Forcefully kill any process on ports 4000, 4001, 4002, 4003 and 3000
-for port in 4000 4001 4002 4003 3000; do
+# Forcefully kill any process on ports 4000, 4001, 4002, 4003, 4004 and 3000
+for port in 4000 4001 4002 4003 4004 3000; do
     echo "🧹 Clearing port $port..."
     lsof -ti:$port | xargs kill -9 2>/dev/null || true
 done

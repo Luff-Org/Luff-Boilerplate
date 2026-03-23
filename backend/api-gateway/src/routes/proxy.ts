@@ -34,3 +34,4 @@ function createServiceProxy(target: string, pathPrefix: string) {
 export const authProxy = createServiceProxy(env.AUTH_SERVICE_URL, '/auth');
 export const postsProxy = createServiceProxy(env.POSTS_SERVICE_URL, '/posts');
 export const paymentProxy = createServiceProxy(env.PAYMENT_SERVICE_URL, '/payments');
+export const aiProxy = createServiceProxy(env.AI_SERVICE_URL, '/ai');
