@@ -24,9 +24,9 @@
 ## 🧬 Architecture at a Glance
 
 ```mermaid
-%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'19px'}}}%%
 graph LR
-  FE[Frontend] -->|API| GW[Gateway]
+  FE[FE] --> GW[API GW]
   GW --> A[Auth]
   GW --> P[Posts]
   GW --> Pay[Pay]
@@ -57,20 +57,6 @@ graph LR
 
 The AI domain is the heartbeat of LUFF. — providing production-ready intelligence out of the box.
 
-```mermaid
-%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
-flowchart TD
-  A[Upload] --> B[Parse]
-  B --> C[Chunk]
-  C --> D[Embed]
-  D --> E[Store]
-  F[Query] --> G[Search]
-  E --> G
-  G --> H[Context]
-  H --> I[Gemini]
-  I --> J[Answer]
-```
-
 | Feature | Details |
 |:---|:---|
 | **Model** | Google Gemini 2.5 Flash — low-latency, high-quality reasoning |
@@ -82,8 +68,7 @@ flowchart TD
 
 ## 💳 Payment Service — Transaction Infrastructure
 
-<details>
-<summary><b>🔍 Click to expand Payment Architecture</b></summary>
+<b>🔍 Click to expand Payment Architecture</b>
 
 ```mermaid
 %%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
@@ -116,14 +101,11 @@ sequenceDiagram
 | `/payments/verify` | POST | ✅ | Verifies payment signature (HMAC-SHA256) |
 | `/payments/my-purchases` | GET | ✅ | Returns user's transaction history |
 
-</details>
-
 ---
 
 ## 🔐 Auth Service — Stateless Security
 
-<details>
-<summary><b>🔍 Click to expand Authentication Flow</b></summary>
+<b>🔍 Click to expand Authentication Flow</b>
 
 ```mermaid
 %%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
@@ -150,8 +132,6 @@ sequenceDiagram
 |:---|:---:|:---:|:---|
 | `POST /auth/google` | POST | ❌ | Validates Google token, returns JWT |
 | `GET /auth/me` | GET | ✅ | Returns authenticated user profile |
-
-</details>
 
 ---
 
