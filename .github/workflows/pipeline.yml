@@ -30,6 +30,7 @@ jobs:
         run: |
           npm run db:generate --workspace=@backend/auth
           npm run db:generate --workspace=@backend/posts
+          npm run db:generate --workspace=@backend/payment
 
       - name: Build & Type Check
         run: npm run build
@@ -62,6 +63,10 @@ jobs:
             context: .
             dockerfile: backend/posts/Dockerfile
             image_name: posts-service
+          - service: payment-service
+            context: .
+            dockerfile: backend/payment/Dockerfile
+            image_name: payment-service
           - service: api-gateway
             context: .
             dockerfile: backend/api-gateway/Dockerfile
@@ -122,7 +127,7 @@ jobs:
 
       - name: Update Image Tags
         run: |
-          for service in auth-service posts-service api-gateway frontend; do
+          for service in auth-service posts-service payment-service api-gateway frontend; do
             sed -i "s|image: .*$service:.*|image: ${{ env.REGISTRY }}/${{ steps.owner.outputs.owner }}/$service:${{ github.sha }}|g" k8s/*.yaml
           done
         env:
