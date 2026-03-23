@@ -24,7 +24,7 @@
 ## 🧬 Architecture at a Glance
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 graph LR
   FE[Frontend] -->|API| GW[Gateway]
   GW --> A[Auth]
@@ -58,7 +58,7 @@ graph LR
 The AI domain is the heartbeat of LUFF. — providing production-ready intelligence out of the box.
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart TD
   A[Upload] --> B[Parse]
   B --> C[Chunk]
@@ -86,7 +86,7 @@ flowchart TD
 <summary><b>🔍 Click to expand Payment Architecture</b></summary>
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
   participant U as User
   participant F as Frontend
@@ -126,7 +126,7 @@ sequenceDiagram
 <summary><b>🔍 Click to expand Authentication Flow</b></summary>
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
   participant U as User
   participant F as Frontend

@@ -29,7 +29,7 @@ node -v && npm -v && docker -v && git --version
 ## 🛠️ Step-by-Step Setup
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   A[Clone] --> B[Install] --> C[Env] --> D[Docker] --> E[Prisma] --> F[Launch]
 ```
@@ -227,7 +227,7 @@ curl http://localhost:4003/health   # Payment
 ## 🗺️ Full Service Map
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 graph TB
   FE[Frontend] --> GW[Gateway]
   GW --> A[Auth] --> AD[(AuthDB)]

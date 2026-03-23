@@ -109,7 +109,7 @@ Handles everything: clears port conflicts, starts Docker DBs, launches all servi
 ### Option B: Kubernetes Mode (Production)
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   A[Build] --> B[Tag] --> C[ArgoCD] --> D[Deploy] --> E[Forward]
 ```
@@ -167,7 +167,7 @@ kubectl create secret generic ai-secrets \
 ## 🤖 5. CI/CD Pipeline
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   Push --> CI[Actions] --> Lint --> Build --> Reg[GHCR] --> Argo[ArgoCD] --> K8s
 ```

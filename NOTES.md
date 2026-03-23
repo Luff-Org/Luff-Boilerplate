@@ -13,7 +13,7 @@
 ## 🧬 1. System Architecture
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 graph TB
   U[User] --> FE[Frontend]
   FE --> GW[Gateway]
@@ -46,7 +46,7 @@ The AI domain is the most architecturally significant service — providing prod
 ### RAG Pipeline Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   A[Upload] --> B[Parse]
   B --> C[Split]
@@ -80,7 +80,7 @@ flowchart LR
 ## 🔐 3. Authentication — End-to-End Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
   participant U as User
   participant F as Frontend
@@ -103,7 +103,7 @@ sequenceDiagram
 ### How JWT Flows Across Services
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   A[Frontend] --> B[Gateway]
   B --> C{Middleware}
@@ -125,7 +125,7 @@ flowchart LR
 ## 💳 4. Payment Service — Transaction Architecture
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 sequenceDiagram
   participant U as User
   participant F as Frontend
@@ -180,7 +180,7 @@ sequenceDiagram
 ## 🛡️ 6. API Gateway — Orchestration Hub
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   Req[Request] --> CORS
   CORS --> RL[Limiter]
@@ -225,7 +225,7 @@ flowchart LR
 ## 🎨 9. Frontend Architecture
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart TD
   L[Layout] --> Nav[Navbar]
   L --> Pg[Pages]
@@ -251,7 +251,7 @@ flowchart TD
 ## ⚙️ 10. DevOps & CI/CD
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   Push --> CI[Actions]
   CI --> Lint

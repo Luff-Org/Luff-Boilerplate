@@ -86,7 +86,7 @@ During scaffolding, the CLI asks:
 ### AI Architecture
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontSize':'10px'}}}%%
+%%{init: {'theme':'dark','themeVariables':{'fontSize':'10px'}}}%%
 flowchart LR
   A[Upload] --> B[Parse]
   B --> C[Embed]
